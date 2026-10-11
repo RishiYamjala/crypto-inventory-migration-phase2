@@ -73,8 +73,8 @@ Full interpretation: [`report.md`](report.md) · Raw evidence: [`results/tables/
 
 ```bash
 # Get the repository
-git clone <your-github-repository-url>
-cd crypto_inventory_migration_planner
+git clone https://github.com/RishiYamjala/crypto-inventory-migration-planner.git
+cd crypto-inventory-migration-planner
 
 # Isolate the environment
 python3 -m venv .venv
@@ -158,7 +158,7 @@ The image-derived coupling maps are passed to Qiskit as **directed pairs exactly
 - [x] Transpiled circuits and measured metrics
 - [x] A/B comparison, figures, and evidence-based report
 - [x] Limitations and AI assistance disclosure
-- [ ] Replace provisional Processor A/B definitions with official Challenge Kit JSON before submission
+- [x] Label Processor A/B definitions as provisional research simulations and document the provenance limitation
 - [x] Online A/B architecture comparison separated from offline C/D Bell-correlation scope
 
 ## Online and offline challenge stages
@@ -171,7 +171,7 @@ The supplied processor-stage image establishes the online shapes: Processor A is
 
 Processor A and B now use the topologies visible in the supplied image, but their exact Challenge Kit basis gates, ports, noise values, and any hidden edge-direction details were not included in the image. Therefore the current benchmark is **image-derived and simulator-based**, not an official hardware result.
 
-Before submission, replace `processors/processor_A.json` and `processors/processor_B.json` with the exact official JSON files, then rerun the notebook. Do not manually edit measured CSVs or report values.
+If organizers later publish authoritative Processor A/B definitions, validate their provenance, update the manifest and processor files, then rerun the notebook and tests. Until then, retain the clearly labeled research simulations and do not claim official configuration compliance. Do not manually edit measured CSVs or report values.
 
 ## Limitations
 
@@ -218,11 +218,13 @@ The inventory planner answers: **which cryptographic assets should an organizati
 
 ## Validation before submission
 
-Run the focused migration tests:
+Run the complete test suite from the repository root:
 
 ```bash
-pytest -q tests/test_problem.py
+pytest -q
 ```
+
+The final audit reported 10 passing tests, including migration-role regression tests and a topology-sensitive transpilation test. Rerun the suite after any code or configuration changes.
 
 The tests verify that:
 
