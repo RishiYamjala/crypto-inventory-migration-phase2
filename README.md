@@ -149,6 +149,7 @@ The image-derived coupling maps are passed to Qiskit as **directed pairs exactly
 - [`processor_B_metrics.csv`](results/tables/processor_B_metrics.csv)
 - [`AB_comparison.csv`](results/tables/AB_comparison.csv)
 - [`final_comparison.csv`](results/tables/final_comparison.csv)
+- [`architecture_stress_test.csv`](results/tables/architecture_stress_test.csv) — supplementary topology evidence
 
 ### Figures
 
