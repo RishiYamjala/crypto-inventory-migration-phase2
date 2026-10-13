@@ -1,6 +1,6 @@
 {
   "name": "Processor B",
-  "num_qubits": 7,
+  "num_qubits": 9,
   "coupling_map": [
     [
       0,
@@ -33,6 +33,14 @@
     [
       2,
       5
+    ],
+    [
+      1,
+      7
+    ],
+    [
+      2,
+      8
     ]
   ],
   "basis_gates": [
@@ -50,9 +58,9 @@
     "cx_depolarizing": 0.01,
     "readout_error": 0.01
   },
-  "note": "IMAGE-DERIVED TOPOLOGY - exact Challenge Kit basis gates, ports, and noise values still pending",
-  "topology_description": "Seven-qubit heavy-hex-inspired topology transcribed from the supplied processor-stage image; node labels are assigned deterministically from 0 to 6.",
+  "topology_description": "Nine-qubit heavy-hex-inspired participant reference architecture; node labels and edge directions are participant-defined for this reproducible research simulation.",
   "stage": "Phase 1 online Processor B",
-  "source": "user-supplied processor-stage image; not an official JSON edge list",
-  "official_challenge_kit_verified": false
+  "source": "organizer reference image and chat clarification; participant-defined research simulation",
+  "official_challenge_kit_verified": false,
+  "note": "PARTICIPANT-DEFINED RESEARCH MODEL - exact official basis gates, ports, directionality, and noise values are not supplied"
 }

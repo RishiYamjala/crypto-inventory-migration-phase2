@@ -6,7 +6,7 @@ Sources: [`QFF_IBM_Hackathon_Guideline.pdf`](QFF_IBM_Hackathon_Guideline.pdf), [
 |---|---|---|
 | Online Processor A and B comparison | `main.ipynb`, `results/tables/AB_comparison.csv` | Implemented provisionally |
 | Processor A online stage | `processors/processor_A.json`, 5 qubits | Qubit count confirmed; exact edge list not present in PDF |
-| Processor B online stage | `processors/processor_B.json`, 7 qubits | Qubit count confirmed; exact edge list not present in PDF |
+| Processor B online stage | `processors/processor_B.json`, 9 qubits | Latest organizer clarification; participant-defined edge list is documented |
 | Same selected problem and controlled settings | `src/routing.py`, notebook controls | Implemented |
 | Solution quality/reference comparison | `success_probability`, `ideal_success_probability` | Implemented |
 | Circuit cost | `depth`, `two_qubit_gates`, `total_ops` | Implemented |

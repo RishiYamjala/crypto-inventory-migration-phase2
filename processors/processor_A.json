@@ -34,9 +34,9 @@
     "cx_depolarizing": 0.01,
     "readout_error": 0.01
   },
-  "topology_description": "Five-qubit fixed baseline T-shaped graph transcribed from the supplied processor-stage image; node labels are assigned deterministically from 0 to 4.",
+  "topology_description": "Five-qubit branching-tree reference architecture transcribed from the supplied processor image; node labels are participant-assigned.",
   "stage": "Phase 1 online Processor A",
-  "source": "user-supplied processor-stage image; not an official JSON edge list",
+  "source": "organizer reference image; participant-defined research simulation",
   "official_challenge_kit_verified": false,
-  "note": "IMAGE-DERIVED TOPOLOGY - exact Challenge Kit basis gates, ports, and noise values still pending"
+  "note": "PARTICIPANT-DEFINED RESEARCH MODEL - exact official basis gates, ports, directionality, and noise values are not supplied"
 }

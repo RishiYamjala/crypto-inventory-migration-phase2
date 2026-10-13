@@ -12,10 +12,11 @@ def test_processor_maps_can_change_transpilation_metrics():
     a = load_processor("processors/processor_A.json")
     b = load_processor("processors/processor_B.json")
     circuit = QuantumCircuit(3)
-    # A triangle/ring forces routing choices that expose the different graphs.
+    # This repeated-star pattern is directly supported by A's branching map
+    # but requires routing on B's participant-defined map with seed 42.
     circuit.cx(0, 1)
-    circuit.cx(1, 2)
     circuit.cx(0, 2)
+    circuit.cx(0, 1)
     compiled_a = transpile_for_processor(circuit, a)
     compiled_b = transpile_for_processor(circuit, b)
     repeat_a = transpile_for_processor(circuit, a)

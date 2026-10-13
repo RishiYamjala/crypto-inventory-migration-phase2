@@ -18,7 +18,7 @@ def main():
     if missing:
         print(f"FAIL: missing artifacts: {missing}")
         return 1
-    for name, expected_qubits in [("processor_A.json", 5), ("processor_B.json", 7)]:
+    for name, expected_qubits in [("processor_A.json", 5), ("processor_B.json", 9)]:
         data = json.loads((ROOT / "processors" / name).read_text())
         if data.get("num_qubits") != expected_qubits:
             print(f"FAIL: {name} expected {expected_qubits} qubits")

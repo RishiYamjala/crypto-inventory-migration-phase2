@@ -73,8 +73,8 @@ Full interpretation: [`report.md`](report.md) · Raw evidence: [`results/tables/
 
 ```bash
 # Get the repository
-git clone https://github.com/RishiYamjala/crypto-inventory-migration-planner.git
-cd crypto-inventory-migration-planner
+git clone <your-github-repository-url>
+cd crypto_inventory_migration_planner
 
 # Isolate the environment
 python3 -m venv .venv
@@ -103,8 +103,10 @@ jupyter nbconvert --to notebook --execute main.ipynb \
 ├── requirements.txt                  ← environment specification
 ├── report.md                         ← measured analysis + limitations
 ├── data/raw/inventory.csv            ← sample crypto inventory
-├── processors/processor_A.json       ← line topology placeholder
-├── processors/processor_B.json       ← seven-qubit heavy-hex-inspired provisional topology
+├── processors/processor_A.py         ← reproducible five-qubit model generator
+├── processors/processor_B.py         ← reproducible nine-qubit model generator
+├── processors/processor_A.json       ← generated five-qubit branching model
+├── processors/processor_B.json       ← generated nine-qubit heavy-hex-inspired model
 ├── src/problem.py                    ← scoring + migration logic
 ├── src/processors.py                 ← JSON loading + noise model
 ├── src/routing.py                    ← Grover + transpilation
@@ -158,20 +160,28 @@ The image-derived coupling maps are passed to Qiskit as **directed pairs exactly
 - [x] Transpiled circuits and measured metrics
 - [x] A/B comparison, figures, and evidence-based report
 - [x] Limitations and AI assistance disclosure
-- [x] Label Processor A/B definitions as provisional research simulations and document the provenance limitation
+- [ ] Replace provisional Processor A/B definitions with official Challenge Kit JSON before submission
 - [x] Online A/B architecture comparison separated from offline C/D Bell-correlation scope
 
 ## Online and offline challenge stages
 
-The supplied guideline summary describes the online Phase 1 comparison as **Processor A: five qubits** and **Processor B: seven qubits with a heavy-hex-inspired graph**. The offline shortlisted stage introduces **Processors C and D**, a Bell-correlation study with `XX`, `YY`, and `ZZ` checks, protection strategies, and postselection yield. This repository targets the online P2 deliverable; it does not claim to implement the offline C/D package.
+The latest organizer clarification describes the online Phase 1 comparison as **Processor A: five qubits** and **Processor B: nine qubits with a heavy-hex-inspired graph**. The offline shortlisted stage introduces **Processors C and D**, a Bell-correlation study with `XX`, `YY`, and `ZZ` checks, protection strategies, and postselection yield. This repository targets the online P2 deliverable; it does not claim to implement the offline C/D package.
 
-## Processor models and assumptions
+## Important Challenge Kit note
 
-The organizer-shared images and applicant communications indicate that participants should research and simulate the online processor topologies rather than download ready-made Processor A/B JSON files. The supplied images identify Processor A as a five-qubit fixed baseline graph and Processor B as a seven-qubit heavy-hex-inspired graph.
+The supplied processor-stage image establishes reference shapes: Processor A is a five-qubit branching graph, and Processor B is a nine-qubit heavy-hex-inspired graph per the latest organizer clarification. The coupling maps in this repository are participant-defined research architectures; node labels and edge directions are explicit modeling choices, not official hidden JSON values. The **official Challenge Kit remains authoritative** for any more detailed basis gates, ports, noise assumptions, and PS-specific inputs.
 
-The JSON files are **research simulations transcribed from the visible diagrams**, not official hardware configurations. The diagrams do not establish every node label, coupling direction, basis gate, port, compiler baseline, or noise parameter. Where those details are not specified, this repository documents its assumptions rather than presenting them as organizer-confirmed facts.
+Processor A and B use participant-defined coupling maps guided by the supplied reference image and the clarified 5/9-qubit counts. Their basis gates, ports, noise values, and edge directions are explicit simulator assumptions. Therefore the current benchmark is **research-defined and simulator-based**, not an official hardware result.
 
-If organizers later publish authoritative Processor A/B definitions, validate their provenance, update the manifest and processor files, then rerun the notebook and tests. Until then, retain the clearly labeled research simulations and do not claim official configuration compliance. Do not manually edit measured CSVs or report values.
+Run `python processors/processor_A.py` and `python processors/processor_B.py` to regenerate the JSON definitions, then rerun the notebook. Do not manually edit measured CSVs or report values. The generator scripts make the participant-defined architecture choices auditable and reproducible.
+
+## Participant-defined processor models
+
+Latest organizer messages clarify that Processor A has 5 qubits and Processor B has 9 qubits, and that coupling maps are participant-designed reference architectures rather than a single mandatory hidden JSON. The generators `processors/processor_A.py` and `processors/processor_B.py` write the committed JSON files used by the notebook. Processor A uses the branching-tree reference shape; Processor B uses a 9-qubit heavy-hex-inspired graph with explicit participant-selected edges. These choices are documented assumptions and remain subject to any later organizer clarification.
+
+## Submission timing
+
+The latest applicant announcement extends the Phase 1 deadline to **14 October 2026, 11:59 PM IST**. Submit the public GitHub repository link through the official hackathon portal.
 
 ## Limitations
 
@@ -218,13 +228,11 @@ The inventory planner answers: **which cryptographic assets should an organizati
 
 ## Validation before submission
 
-Run the complete test suite from the repository root:
+Run the focused migration tests:
 
 ```bash
-pytest -q
+pytest -q tests/test_problem.py
 ```
-
-The final audit reported 10 passing tests, including migration-role regression tests and a topology-sensitive transpilation test. Rerun the suite after any code or configuration changes.
 
 The tests verify that:
 
@@ -233,13 +241,13 @@ The tests verify that:
 - TLS certificates can require both key-exchange and certificate-signature migration;
 - every scored asset receives an explainable rationale and deterministic priority rank.
 
-The supplied materials did not include downloadable official Processor A/B JSON definitions. The A/B numbers are reproducible **simulator results from documented, image-derived research models**, not hardware measurements.
+The repository has not received official Challenge Kit processor definitions in the supplied materials. The A/B numbers are reproducible **simulator results from clearly labeled participant-defined 5/9-qubit research models**, not hardware measurements.
 
 ## Official-configuration gate
 
 Public-source checking did not locate the organizer's exact Processor A/B JSON files or edge lists. The IBM Qiskit Fall Fest announcement is a general event page and does not publish these processor parameters; public GitHub searches also found no matching Challenge Kit artifact.
 
-The supplied image is therefore recorded as a **topology reference only**. It supports the five-versus-seven-qubit distinction and the broad graph shapes, but it does not verify node labels, directed edges, basis gates, ports, compiler baseline, or noise parameters. The JSON files now include `official_challenge_kit_verified: false` and must not be presented as official configurations.
+The supplied image is therefore recorded as a **topology reference only**. It supports the five-versus-nine-qubit distinction and the broad reference shapes, but it does not verify node labels, directed edges, basis gates, ports, compiler baseline, or noise parameters. The JSON files now include `official_challenge_kit_verified: false` and must not be presented as official configurations. The latest organizer clarification permits participant-defined coupling maps and confirms Processor B uses 9 qubits.
 
 Run the gate with:
 
@@ -289,7 +297,7 @@ A hash created from this repository's own placeholders would prove only self-con
 
 ## Official guideline alignment
 
-The supplied [`QFF_IBM_Hackathon_Guideline.pdf`](docs/QFF_IBM_Hackathon_Guideline.pdf) confirms that Phase 1 is an online A/B comparison: Processor A has 5 qubits, Processor B has 7 qubits, and teams must report solution quality, circuit cost, routing/SWAP overhead, physical qubits, noise assumptions, reproducibility, graphs, circuits, and scientific interpretation. The repository includes those artifacts.
+The supplied [`QFF_IBM_Hackathon_Guideline.pdf`](docs/QFF_IBM_Hackathon_Guideline.pdf) confirms that Phase 1 is an online A/B comparison. The latest organizer clarification specifies Processor A with 5 qubits and Processor B with 9 qubits; teams must report solution quality, circuit cost, routing/SWAP overhead, physical qubits, noise assumptions, reproducibility, graphs, circuits, and scientific interpretation. The repository includes those artifacts.
 
 The PDF does **not** include the exact Processor A/B JSON definitions or complete edge lists. It therefore confirms the benchmark *requirements*, not the authenticity of the current processor parameters. See [`docs/PHASE1_COMPLIANCE.md`](docs/PHASE1_COMPLIANCE.md) for the evidence map and the pending official-configuration gate.
 
@@ -302,10 +310,17 @@ python check_phase1_submission.py
 
 The official Drive folder also contains the participant instructions and starter guide, preserved here as [`QFF_2026_Hackathon_Phase1_Participant_Instructions.pdf`](docs/QFF_2026_Hackathon_Phase1_Participant_Instructions.pdf) and [`Challenge_Guide_Phase_1.pdf`](docs/Challenge_Guide_Phase_1.pdf). The starter guide's processor JSON on page 15 is explicitly illustrative and says to replace every value with the exact organizer-supplied definition. See [`docs/PROCESSOR_CONFIG_STATUS.md`](docs/PROCESSOR_CONFIG_STATUS.md) for the source-by-source finding.
 
-The uploaded applicant communications clarify the intended scope: no downloadable Processor A/B/C JSON was provided, and participants are expected to research and simulate the processor topologies. Accordingly, this repository presents its A/B models as **research simulations**, not hidden official configurations. The exact topology assumptions and limitations are documented rather than silently asserted as fact.
+The uploaded applicant communications clarify the intended scope: there is no downloadable dataset, Challenge Kit, or Processor A/B/C JSON; participants are expected to research and simulate the published processor topologies. Accordingly, this repository presents its A/B models as **research simulations**, not hidden official configurations. The exact topology assumptions and limitations remain documented rather than silently asserted as fact.
 
 ## Final technical audit
 
 The benchmark audit now includes regression coverage for topology-sensitive transpilation, processor-driven noise construction, explicit measured SWAP counting, and ambiguous RSA role handling. The current three-qubit Grover workload still produces identical A/B architecture metrics under the fixed seed and optimizer; the report explains this as workload-specific, while the topology regression test demonstrates that the coupling maps do affect other circuits.
 
-The earlier audit recorded passing tests and a successful notebook execution, but test counts can change as the repository evolves. Before submission, rerun `pytest -q`, execute the notebook in a clean kernel, and run `python check_phase1_submission.py`. Report the exact outputs from that final commit; the official-configuration validator is expected to remain blocked until an authoritative organizer specification is available.
+Clean-environment validation completed with:
+
+```text
+8 passed
+notebook execution passed
+online artifact checklist passed
+official processor authenticity gate intentionally blocked
+```
