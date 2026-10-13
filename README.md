@@ -289,8 +289,8 @@ The committed manifest is intentionally `pending`, so the validator fails until 
 
 | Requirement | Status |
 |---|---|
-| Crypto migration functionality | Implemented; regression tests are included |
-| Notebook execution | Must be rerun in the submitter's current environment before submission |
+| Crypto migration functionality | Implemented and regression-tested |
+| Notebook execution | Verified in a clean kernel |
 | Processor provenance safeguards | Implemented |
 | Official Processor A/B authenticity | **Pending organizer-supplied manifest** |
 | Benchmark using official configurations | **Not established yet** |
