@@ -71,29 +71,36 @@ Full interpretation: [`report.md`](report.md) · Raw evidence: [`results/tables/
 
 ## Quick start
 
-```bash
-# Get the repository
-git clone <your-github-repository-url>
-cd crypto_inventory_migration_planner
+Use Python 3.11 or 3.12 in a fresh virtual environment. From Windows PowerShell:
 
-# Isolate the environment
-python3 -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
-
-# Install and run
+```powershell
+git clone https://github.com/RishiYamjala/crypto-inventory-migration-planner.git
+cd crypto-inventory-migration-planner
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
+python -m pytest -q
+python check_phase1_submission.py
 jupyter notebook main.ipynb
 ```
 
-In Jupyter, choose **Kernel → Restart Kernel and Run All Cells**.
+If PowerShell cannot find `py -3.12`, install Python 3.12 first or use `python -m venv .venv` with a supported Python version. If activation is blocked by your machine's PowerShell policy, open Command Prompt and run `.venv\Scripts\activate.bat` instead.
 
-For a headless run:
+On macOS/Linux, replace the environment creation and activation commands with:
 
 ```bash
-jupyter nbconvert --to notebook --execute main.ipynb \
-  --output executed_main.ipynb --ExecutePreprocessor.timeout=600
+python3.12 -m venv .venv
+source .venv/bin/activate
 ```
+
+In Jupyter, choose **Kernel → Restart Kernel and Run All Cells**. To execute the notebook headlessly:
+
+```bash
+jupyter nbconvert --to notebook --execute main.ipynb --output executed_main.ipynb --ExecutePreprocessor.timeout=600
+```
+
+The artifact checklist checks files and basic expected fields; it does not certify scientific validity or official processor provenance. The provenance validator is a separate check and is expected to remain blocked while the organizer-authenticated manifest is pending.
 
 ## Repository map
 
@@ -189,7 +196,7 @@ A toy three-qubit Grover run **does not estimate the cost of attacking real RSA 
 
 ## AI assistance disclosure
 
-This project was built with an AI tool. The implementation was executed, checked, and corrected in a clean notebook run before packaging.
+AI assistance was used during development. The submitter should review the final code, run the tests and notebook locally, and ensure the submitted results match the generated artifacts.
 
 ## License
 
@@ -312,15 +319,22 @@ The official Drive folder also contains the participant instructions and starter
 
 The uploaded applicant communications clarify the intended scope: there is no downloadable dataset, Challenge Kit, or Processor A/B/C JSON; participants are expected to research and simulate the published processor topologies. Accordingly, this repository presents its A/B models as **research simulations**, not hidden official configurations. The exact topology assumptions and limitations remain documented rather than silently asserted as fact.
 
-## Final technical audit
+## Automated validation and limitations
 
-The benchmark audit now includes regression coverage for topology-sensitive transpilation, processor-driven noise construction, explicit measured SWAP counting, and ambiguous RSA role handling. The current three-qubit Grover workload still produces identical A/B architecture metrics under the fixed seed and optimizer; the report explains this as workload-specific, while the topology regression test demonstrates that the coupling maps do affect other circuits.
+The repository includes regression tests for migration recommendations, processor-driven noise, and topology-sensitive transpilation, plus a CI workflow for Python 3.11 and 3.12. CI runs the tests and the online artifact checklist. These automated checks do not replace a fresh end-to-end notebook run or organizer review.
 
-Clean-environment validation completed with:
+Before submitting, run `python -m pytest -q`, `python check_phase1_submission.py`, and execute every cell in `main.ipynb` in a clean environment. Confirm that regenerated tables, figures, and report agree. The official processor authenticity validator is expected to fail while the organizer-authenticated manifest is pending; do not represent participant-defined models as official configurations.
 
-```text
-8 passed
-notebook execution passed
-online artifact checklist passed
-official processor authenticity gate intentionally blocked
+The benchmark remains a simulator experiment using participant-defined 5/9-qubit research models. Its three-qubit Grover results do not estimate the cost of attacking real RSA/ECC keys.
+
+## Supplementary topology stress tests
+
+The required common Grover benchmark remains the primary A/B comparison. To investigate whether the participant-defined coupling maps affect other circuit structures, the repository also includes a small supplementary compiler stress suite:
+
+```bash
+python -m src.architecture_stress
 ```
+
+This runs star, chain, and ring interaction patterns against both processor models and writes `results/tables/architecture_stress_test.csv`. It reports compiled depth, two-qubit gates, baseline/extra two-qubit gates, explicit SWAP instructions, an estimated SWAP-equivalent count, physical qubits used, and the transpiler seed. The estimated SWAP-equivalent metric is not a direct SWAP count.
+
+These are supplementary simulator/compiler experiments using participant-defined research models. They do not replace the required benchmark, verify official processor authenticity, measure real hardware, or estimate the cost of attacking RSA/ECC. The generated table should be inspected alongside the CI run before submission.

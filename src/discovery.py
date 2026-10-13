@@ -40,15 +40,17 @@ def _usage_for(path, text):
 def discover_directory(directory, default_sensitivity="Medium", default_lifespan="1-5 years"):
     """Discover algorithm mentions under an explicitly authorized local directory.
 
-    Returns one row per algorithm mention with source-file evidence. Binary files and
-    files larger than ten megabytes are skipped to keep this beginner-friendly and safe.
+    Returns one row per algorithm mention with source-file evidence. Binary files,
+    symlinks, and files larger than ten megabytes are skipped to avoid following links
+    outside the caller-supplied directory and to keep this beginner-friendly and safe.
     """
     root = Path(directory).expanduser().resolve()
     if not root.is_dir():
         raise NotADirectoryError(f"Authorized discovery directory does not exist: {root}")
     records = []
     for path in sorted(root.rglob("*")):
-        if not path.is_file() or path.stat().st_size > 10_000_000:
+        # Do not follow symlinks: a file link could point outside the authorized root.
+        if path.is_symlink() or not path.is_file() or path.stat().st_size > 10_000_000:
             continue
         try:
             text = path.read_text(encoding="utf-8", errors="ignore")

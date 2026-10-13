@@ -10,3 +10,4 @@ nbconvert
 pylatexenc
 streamlit
 pytest
+notebook
