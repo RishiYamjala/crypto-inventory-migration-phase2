@@ -326,3 +326,15 @@ The repository includes regression tests for migration recommendations, processo
 Before submitting, run `python -m pytest -q`, `python check_phase1_submission.py`, and execute every cell in `main.ipynb` in a clean environment. Confirm that regenerated tables, figures, and report agree. The official processor authenticity validator is expected to fail while the organizer-authenticated manifest is pending; do not represent participant-defined models as official configurations.
 
 The benchmark remains a simulator experiment using participant-defined 5/9-qubit research models. Its three-qubit Grover results do not estimate the cost of attacking real RSA/ECC keys.
+
+## Supplementary topology stress tests
+
+The required common Grover benchmark remains the primary A/B comparison. To investigate whether the participant-defined coupling maps affect other circuit structures, the repository also includes a small supplementary compiler stress suite:
+
+```bash
+python -m src.architecture_stress
+```
+
+This runs star, chain, and ring interaction patterns against both processor models and writes `results/tables/architecture_stress_test.csv`. It reports compiled depth, two-qubit gates, baseline/extra two-qubit gates, explicit SWAP instructions, an estimated SWAP-equivalent count, physical qubits used, and the transpiler seed. The estimated SWAP-equivalent metric is not a direct SWAP count.
+
+These are supplementary simulator/compiler experiments using participant-defined research models. They do not replace the required benchmark, verify official processor authenticity, measure real hardware, or estimate the cost of attacking RSA/ECC. The generated table should be inspected alongside the CI run before submission.
