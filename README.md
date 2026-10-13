@@ -160,7 +160,7 @@ The image-derived coupling maps are passed to Qiskit as **directed pairs exactly
 - [x] Transpiled circuits and measured metrics
 - [x] A/B comparison, figures, and evidence-based report
 - [x] Limitations and AI assistance disclosure
-- [ ] Replace provisional Processor A/B definitions with official Challenge Kit JSON before submission
+- [x] Processor A/B definitions are generated reproducibly from participant Python models
 - [x] Online A/B architecture comparison separated from offline C/D Bell-correlation scope
 
 ## Online and offline challenge stages
