@@ -196,7 +196,7 @@ A toy three-qubit Grover run **does not estimate the cost of attacking real RSA 
 
 ## AI assistance disclosure
 
-This project was built with an AI tool. The implementation was executed, checked, and corrected in a clean notebook run before packaging.
+AI assistance was used during development. The submitter should review the final code, run the tests and notebook locally, and ensure the submitted results match the generated artifacts.
 
 ## License
 
@@ -289,7 +289,7 @@ The committed manifest is intentionally `pending`, so the validator fails until 
 
 | Requirement | Status |
 |---|---|
-| Crypto migration functionality | Implemented and regression-tested |
+| Crypto migration functionality | Implemented; regression tests are included |
 | Notebook execution | Must be rerun in the submitter's current environment before submission |
 | Processor provenance safeguards | Implemented |
 | Official Processor A/B authenticity | **Pending organizer-supplied manifest** |
