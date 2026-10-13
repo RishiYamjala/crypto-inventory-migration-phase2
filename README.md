@@ -71,29 +71,36 @@ Full interpretation: [`report.md`](report.md) · Raw evidence: [`results/tables/
 
 ## Quick start
 
-```bash
-# Get the repository
-git clone <your-github-repository-url>
-cd crypto_inventory_migration_planner
+Use Python 3.11 or 3.12 in a fresh virtual environment. From Windows PowerShell:
 
-# Isolate the environment
-python3 -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
-
-# Install and run
+```powershell
+git clone https://github.com/RishiYamjala/crypto-inventory-migration-planner.git
+cd crypto-inventory-migration-planner
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
+python -m pytest -q
+python check_phase1_submission.py
 jupyter notebook main.ipynb
 ```
 
-In Jupyter, choose **Kernel → Restart Kernel and Run All Cells**.
+If PowerShell cannot find `py -3.12`, install Python 3.12 first or use `python -m venv .venv` with a supported Python version. If activation is blocked by your machine's PowerShell policy, open Command Prompt and run `.venv\Scripts\activate.bat` instead.
 
-For a headless run:
+On macOS/Linux, replace the environment creation and activation commands with:
 
 ```bash
-jupyter nbconvert --to notebook --execute main.ipynb \
-  --output executed_main.ipynb --ExecutePreprocessor.timeout=600
+python3.12 -m venv .venv
+source .venv/bin/activate
 ```
+
+In Jupyter, choose **Kernel → Restart Kernel and Run All Cells**. To execute the notebook headlessly:
+
+```bash
+jupyter nbconvert --to notebook --execute main.ipynb --output executed_main.ipynb --ExecutePreprocessor.timeout=600
+```
+
+The artifact checklist checks files and basic expected fields; it does not certify scientific validity or official processor provenance. The provenance validator is a separate check and is expected to remain blocked while the organizer-authenticated manifest is pending.
 
 ## Repository map
 
@@ -283,7 +290,7 @@ The committed manifest is intentionally `pending`, so the validator fails until 
 | Requirement | Status |
 |---|---|
 | Crypto migration functionality | Implemented and regression-tested |
-| Notebook execution | Verified in a clean kernel |
+| Notebook execution | Must be rerun in the submitter's current environment before submission |
 | Processor provenance safeguards | Implemented |
 | Official Processor A/B authenticity | **Pending organizer-supplied manifest** |
 | Benchmark using official configurations | **Not established yet** |
@@ -312,15 +319,10 @@ The official Drive folder also contains the participant instructions and starter
 
 The uploaded applicant communications clarify the intended scope: there is no downloadable dataset, Challenge Kit, or Processor A/B/C JSON; participants are expected to research and simulate the published processor topologies. Accordingly, this repository presents its A/B models as **research simulations**, not hidden official configurations. The exact topology assumptions and limitations remain documented rather than silently asserted as fact.
 
-## Final technical audit
+## Automated validation and limitations
 
-The benchmark audit now includes regression coverage for topology-sensitive transpilation, processor-driven noise construction, explicit measured SWAP counting, and ambiguous RSA role handling. The current three-qubit Grover workload still produces identical A/B architecture metrics under the fixed seed and optimizer; the report explains this as workload-specific, while the topology regression test demonstrates that the coupling maps do affect other circuits.
+The repository includes regression tests for migration recommendations, processor-driven noise, and topology-sensitive transpilation, plus a CI workflow for Python 3.11 and 3.12. CI runs the tests and the online artifact checklist. These automated checks do not replace a fresh end-to-end notebook run or organizer review.
 
-Clean-environment validation completed with:
+Before submitting, run `python -m pytest -q`, `python check_phase1_submission.py`, and execute every cell in `main.ipynb` in a clean environment. Confirm that regenerated tables, figures, and report agree. The official processor authenticity validator is expected to fail while the organizer-authenticated manifest is pending; do not represent participant-defined models as official configurations.
 
-```text
-8 passed
-notebook execution passed
-online artifact checklist passed
-official processor authenticity gate intentionally blocked
-```
+The benchmark remains a simulator experiment using participant-defined 5/9-qubit research models. Its three-qubit Grover results do not estimate the cost of attacking real RSA/ECC keys.
