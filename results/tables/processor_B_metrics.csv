@@ -1,2 +1,2 @@
 processor,success_probability,std_error,depth,two_qubit_gates,measured_swap_count,swap_estimate,physical_qubits_used,total_ops,runtime_seconds,shots,seed,ideal_success_probability,baseline_two_qubit_gates,extra_two_qubit_gates
-Processor B,0.58349609375,0.01089340222678198,175,45,0,7.0,3,276,0.02838409699688782,2048,42,0.95263671875,24,21
+Processor B,0.689453125,0.007229961420743749,175,45,0,7.0,3,276,0.026236861000001,4096,42,0.949462890625,24,21

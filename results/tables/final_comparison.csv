@@ -1,15 +1,15 @@
 Metric,Processor A,Processor B,Difference
-success_probability,0.58349609375,0.58349609375,0.0
-std_error,0.01089340222678198,0.01089340222678198,0.0
+success_probability,0.689453125,0.689453125,0.0
+std_error,0.007229961420743749,0.007229961420743749,0.0
 depth,175.0,175.0,0.0
 two_qubit_gates,45.0,45.0,0.0
 measured_swap_count,0.0,0.0,0.0
 swap_estimate,7.0,7.0,0.0
 physical_qubits_used,3.0,3.0,0.0
 total_ops,276.0,276.0,0.0
-runtime_seconds,0.06889029599915375,0.02838409699688782,-0.04050619900226593
-shots,2048.0,2048.0,0.0
+runtime_seconds,0.05612399000000323,0.026236861000001,-0.029887129000002233
+shots,4096.0,4096.0,0.0
 seed,42.0,42.0,0.0
-ideal_success_probability,0.95263671875,0.95263671875,0.0
+ideal_success_probability,0.949462890625,0.949462890625,0.0
 baseline_two_qubit_gates,24.0,24.0,0.0
 extra_two_qubit_gates,21.0,21.0,0.0

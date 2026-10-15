@@ -15,7 +15,7 @@ CONFIG = {
     "ports": {"readout": "standard", "control": "standard"},
     "noise": {
         "one_qubit_depolarizing": 0.001,
-        "cx_depolarizing": 0.01,
+        "cx_depolarizing": 0.005,
         "readout_error": 0.01,
     },
     "topology_description": (

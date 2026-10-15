@@ -8,7 +8,7 @@ from qiskit_aer import AerSimulator
 from .processors import build_noise_model
 from .routing import transpile_for_processor
 
-SHOTS = 2048
+SHOTS = 4096
 SEED = 42
 
 
