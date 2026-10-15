@@ -24,7 +24,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 from src.discovery import discover_directory
 
-GROUND_TRUTH_COLUMNS = {"path", "algorithm", "is_present", "reviewed"}
+GROUND_TRUTH_COLUMNS = {"path", "algorithm", "is_present", "reviewed", "repository", "ref"}
 
 
 def calculate_metrics(detections, annotations):
@@ -46,7 +46,7 @@ def calculate_metrics(detections, annotations):
     }
 
 
-def _read_ground_truth(path):
+def _read_ground_truth(path, expected_repo, expected_ref):
     annotations = {}
     with Path(path).open(newline="", encoding="utf-8-sig") as handle:
         reader = csv.DictReader(handle)
@@ -55,6 +55,11 @@ def _read_ground_truth(path):
         for line_number, row in enumerate(reader, start=2):
             rel_path = row["path"].replace("\\", "/").strip()
             algorithm = row["algorithm"].strip()
+            if row["repository"].strip() != expected_repo or row["ref"].strip() != expected_ref:
+                raise ValueError(
+                    f"Ground-truth line {line_number} targets "
+                    f"{row['repository']!r}@{row['ref']!r}, expected {expected_repo!r}@{expected_ref!r}"
+                )
             if not rel_path or not algorithm:
                 raise ValueError(f"Empty path or algorithm on ground-truth line {line_number}")
             if row["reviewed"].strip().lower() not in {"true", "1", "yes"}:
@@ -66,6 +71,8 @@ def _read_ground_truth(path):
             if key in annotations:
                 raise ValueError(f"Duplicate ground-truth pair on line {line_number}: {key}")
             annotations[key] = value in {"true", "1", "yes"}
+    if not annotations:
+        raise ValueError("Ground-truth CSV is empty; a complete audit needs reviewed rows")
     return annotations
 
 
@@ -87,7 +94,7 @@ def _download_and_extract(repo, ref, destination):
                 continue
             if member.isfile() or member.isdir():
                 safe_members.append(member)
-        archive.extractall(destination, members=safe_members)
+        archive.extractall(destination, members=safe_members, filter="data")
     roots = [p for p in Path(destination).iterdir() if p.is_dir() and p.name != "__pycache__"]
     if len(roots) != 1:
         raise ValueError("Could not identify one source root in the GitHub archive")
@@ -99,7 +106,7 @@ def main():
     parser.add_argument("--repo", required=True, help="Public GitHub repository as OWNER/REPOSITORY")
     parser.add_argument("--ref", default="main", help="Branch, tag, or commit (default: main)")
     parser.add_argument("--output-dir", default="results/tables", help="Directory for CSV/JSON outputs")
-    parser.add_argument("--ground-truth", help="Reviewed CSV with path,algorithm,is_present,reviewed")
+    parser.add_argument("--ground-truth", help="Reviewed CSV with repository,ref,path,algorithm,is_present,reviewed")
     parser.add_argument("--ground-truth-complete", action="store_true", help="Assert the audited scope is complete")
     args = parser.parse_args()
     if args.ground_truth_complete and not args.ground_truth:
@@ -121,6 +128,24 @@ def main():
             (str(row.evidence_source).replace("\\", "/"), str(row.algorithm))
             for row in findings.itertuples(index=False)
         }
+        # Seed a review worksheet from every candidate pair. Reviewers must set
+        # is_present/reviewed and add any missed positive pairs before scoring.
+        template_path = output_dir / "public_repo_ground_truth_template.csv"
+        with template_path.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.DictWriter(
+                handle,
+                fieldnames=["repository", "ref", "path", "algorithm", "is_present", "reviewed"],
+            )
+            writer.writeheader()
+            for rel_path, algorithm in sorted(detections):
+                writer.writerow({
+                    "repository": args.repo,
+                    "ref": args.ref,
+                    "path": rel_path,
+                    "algorithm": algorithm,
+                    "is_present": "",
+                    "reviewed": "false",
+                })
         summary = {
             "repository": args.repo,
             "ref": args.ref,
@@ -128,6 +153,7 @@ def main():
             "download_seconds": round(download_seconds, 6),
             "scanner_execution_seconds": round(scan_seconds, 6),
             "candidate_findings": len(detections),
+            "ground_truth_template": str(template_path),
             "files_with_findings": int(findings["evidence_source"].nunique()) if not findings.empty else 0,
             "evaluation_status": "pending_manual_ground_truth",
             "precision": None,
@@ -139,10 +165,12 @@ def main():
             ],
         }
         if args.ground_truth:
-            annotations = _read_ground_truth(args.ground_truth)
+            annotations = _read_ground_truth(args.ground_truth, args.repo, args.ref)
             summary.update(calculate_metrics(detections, annotations))
             summary["evaluation_status"] = "human_ground_truth_scored"
             summary["ground_truth_rows"] = len(annotations)
+            summary["ground_truth_file"] = str(Path(args.ground_truth))
+            summary["ground_truth_complete_asserted_by_operator"] = True
         (output_dir / "public_repo_scan_summary.json").write_text(
             json.dumps(summary, indent=2) + "\n", encoding="utf-8"
         )

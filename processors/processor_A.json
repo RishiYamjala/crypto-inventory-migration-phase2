@@ -34,9 +34,14 @@
     "cx_depolarizing": 0.005,
     "readout_error": 0.01
   },
-  "topology_description": "Five-qubit branching-tree reference architecture transcribed from the supplied processor image; node labels are participant-assigned.",
+  "topology_description": "Five-qubit branching-tree research architecture with 4 undirected edges, no triangles, and graph diameter 3. It has a three-edge longest shortest path and limited connectivity.",
   "stage": "Phase 1 online Processor A",
-  "source": "organizer reference image; participant-defined research simulation",
+  "source": "participant-defined topology based on the organizer reference image; research simulation",
   "official_challenge_kit_verified": false,
-  "note": "PARTICIPANT-DEFINED RESEARCH MODEL - exact official basis gates, ports, directionality, and noise values are not supplied"
+  "note": "Participant-defined research model. Exact official ports and hardware calibration data are not supplied; the topology and noise are explicit simulation assumptions.",
+  "graph_properties": {
+    "undirected_edge_count": 4,
+    "triangle_count": 0,
+    "diameter": 3
+  }
 }

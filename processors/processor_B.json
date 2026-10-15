@@ -27,20 +27,28 @@
       6
     ],
     [
-      1,
+      6,
+      7
+    ],
+    [
+      7,
+      8
+    ],
+    [
+      3,
+      5
+    ],
+    [
+      6,
+      8
+    ],
+    [
+      0,
       4
     ],
     [
       2,
-      5
-    ],
-    [
-      1,
-      7
-    ],
-    [
-      2,
-      8
+      6
     ]
   ],
   "basis_gates": [
@@ -58,9 +66,14 @@
     "cx_depolarizing": 0.005,
     "readout_error": 0.01
   },
-  "topology_description": "Nine-qubit heavy-hex-inspired participant reference architecture; node labels and edge directions are participant-defined for this reproducible research simulation.",
+  "topology_description": "Nine-qubit connected research graph with 12 undirected edges, two triangles (3-4-5 and 6-7-8), and graph diameter 4. The two local triangles provide explicit dense three-node neighborhoods, while the added chords reduce long-range path lengths.",
   "stage": "Phase 1 online Processor B",
-  "source": "organizer reference image and chat clarification; participant-defined research simulation",
+  "source": "participant-designed topology guided by the organizer's nine-qubit requirement; research simulation",
   "official_challenge_kit_verified": false,
-  "note": "PARTICIPANT-DEFINED RESEARCH MODEL - exact official basis gates, ports, directionality, and noise values are not supplied"
+  "note": "Participant-defined research model. This graph is intentionally designed for the experiment and is not represented as an organizer-issued edge list or calibrated hardware.",
+  "graph_properties": {
+    "undirected_edge_count": 12,
+    "triangle_count": 2,
+    "diameter": 4
+  }
 }

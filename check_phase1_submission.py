@@ -29,7 +29,7 @@ def main():
         print(f"FAIL: missing required metrics: {sorted(required_metrics - set(table['Metric']))}")
         return 1
     print("PASS: online Phase 1 artifact checklist")
-    print("NOTICE: official processor authenticity remains blocked by the pending manifest")
+    print("NOTICE: processor graphs and noise are participant-defined research models; the guide does not provide an official processor JSON manifest.")
     return 0
 
 

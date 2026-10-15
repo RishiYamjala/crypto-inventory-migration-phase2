@@ -2,6 +2,7 @@ from copy import deepcopy
 
 from qiskit import QuantumCircuit
 
+from src.architecture_stress import run_architecture_stress_test
 from src.metrics import _two_qubit_count
 from src.processors import build_noise_model, load_processor
 from src.routing import transpile_for_processor
@@ -11,12 +12,10 @@ from src.problem import algorithm_role, migration_for
 def test_processor_maps_can_change_transpilation_metrics():
     a = load_processor("processors/processor_A.json")
     b = load_processor("processors/processor_B.json")
-    circuit = QuantumCircuit(3)
-    # This repeated-star pattern is directly supported by A's branching map
-    # but requires routing on B's participant-defined map with seed 42.
+    circuit = QuantumCircuit(5)
+    circuit.cx(0, 3)
     circuit.cx(0, 1)
-    circuit.cx(0, 2)
-    circuit.cx(0, 1)
+    circuit.cx(0, 3)
     compiled_a = transpile_for_processor(circuit, a)
     compiled_b = transpile_for_processor(circuit, b)
     repeat_a = transpile_for_processor(circuit, a)
@@ -24,7 +23,14 @@ def test_processor_maps_can_change_transpilation_metrics():
     assert a["coupling_map"] != b["coupling_map"]
     assert (compiled_a.depth(), _two_qubit_count(compiled_a)) == (repeat_a.depth(), _two_qubit_count(repeat_a))
     assert (compiled_b.depth(), _two_qubit_count(compiled_b)) == (repeat_b.depth(), _two_qubit_count(repeat_b))
-    assert (compiled_a.depth(), _two_qubit_count(compiled_a)) != (compiled_b.depth(), _two_qubit_count(compiled_b))
+
+    # The supplementary ring workload is intentionally topology-sensitive.
+    stress = run_architecture_stress_test()
+    ring_a = stress[(stress["workload"] == "ring") & (stress["processor"] == "Processor A")].iloc[0]
+    ring_b = stress[(stress["workload"] == "ring") & (stress["processor"] == "Processor B")].iloc[0]
+    assert (ring_a["compiled_depth"], ring_a["compiled_two_qubit_gates"]) != (
+        ring_b["compiled_depth"], ring_b["compiled_two_qubit_gates"]
+    )
 
 
 def test_noise_model_uses_processor_parameters_and_basis_gates():

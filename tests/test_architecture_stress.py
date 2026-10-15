@@ -6,7 +6,7 @@ def test_stress_suite_contains_distinct_connectivity_patterns():
     assert set(circuits) == {"star", "chain", "ring"}
     assert circuits["star"].num_qubits == 3
     assert circuits["chain"].num_qubits == 4
-    assert circuits["ring"].num_qubits == 4
+    assert circuits["ring"].num_qubits == 5
 
 
 def test_stress_suite_reports_both_processors_and_documented_metrics():

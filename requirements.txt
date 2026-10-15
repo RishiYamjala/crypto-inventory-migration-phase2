@@ -1,13 +1,14 @@
-qiskit
-qiskit-aer
-numpy
-pandas
-matplotlib
-networkx
-nbformat
-nbconvert
-
-pylatexenc
-streamlit
-pytest
-notebook
+# Reproducible environment for Python 3.12 (Windows/macOS/Linux)
+qiskit==1.4.5
+qiskit-aer==0.17.2
+numpy==2.2.6
+pandas==2.2.3
+matplotlib==3.10.3
+networkx==3.5
+nbformat==5.10.4
+nbconvert==7.16.6
+pylatexenc==2.10
+streamlit==1.48.1
+pytest==8.4.1
+notebook==7.4.4
+ipykernel==6.30.1

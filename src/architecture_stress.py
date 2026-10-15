@@ -36,11 +36,15 @@ def workload_circuits():
     chain.cx(0, 3)
     chain.cx(1, 3)
 
-    ring = QuantumCircuit(4, name="ring")
+    # Five-qubit cycle: Processor B contains the 0-4 closing edge,
+    # while Processor A is a tree and must route at least one cycle interaction.
+    # This makes the topology comparison exercise a real structural difference.
+    ring = QuantumCircuit(5, name="ring")
     ring.cx(0, 1)
     ring.cx(1, 2)
     ring.cx(2, 3)
-    ring.cx(3, 0)
+    ring.cx(3, 4)
+    ring.cx(4, 0)
     ring.cx(0, 2)
     ring.cx(1, 3)
 

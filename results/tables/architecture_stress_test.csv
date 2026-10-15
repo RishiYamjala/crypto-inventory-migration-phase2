@@ -1,7 +1,7 @@
 workload,processor,logical_qubits,compiled_depth,compiled_two_qubit_gates,baseline_two_qubit_gates,extra_two_qubit_gates,measured_swap_instructions,estimated_swap_equivalents,physical_qubits_used,seed,interpretation
 star,Processor A,3,4,4,4,0,0,0.0,3,42,supplementary compiler stress test; not a cryptographic attack estimate
-star,Processor B,3,16,4,4,0,0,0.0,3,42,supplementary compiler stress test; not a cryptographic attack estimate
-chain,Processor A,4,26,8,5,3,0,1.0,4,42,supplementary compiler stress test; not a cryptographic attack estimate
-chain,Processor B,4,26,8,5,3,0,1.0,4,42,supplementary compiler stress test; not a cryptographic attack estimate
-ring,Processor A,4,42,12,6,6,0,2.0,4,42,supplementary compiler stress test; not a cryptographic attack estimate
-ring,Processor B,4,26,9,6,3,0,1.0,4,42,supplementary compiler stress test; not a cryptographic attack estimate
+star,Processor B,3,4,4,4,0,0,0.0,3,42,supplementary compiler stress test; not a cryptographic attack estimate
+chain,Processor A,4,8,8,5,3,0,1.0,4,42,supplementary compiler stress test; not a cryptographic attack estimate
+chain,Processor B,4,8,8,5,3,0,1.0,4,42,supplementary compiler stress test; not a cryptographic attack estimate
+ring,Processor A,5,17,19,7,12,0,4.0,5,42,supplementary compiler stress test; not a cryptographic attack estimate
+ring,Processor B,5,9,10,7,3,0,1.0,5,42,supplementary compiler stress test; not a cryptographic attack estimate

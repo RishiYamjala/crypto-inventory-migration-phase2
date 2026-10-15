@@ -56,3 +56,14 @@ def test_scored_inventory_contains_explainable_priority_fields(tmp_path):
     assert list(df["priority_rank"]) == list(range(1, 11))
     assert df["risk_rationale"].notna().all()
     assert (tmp_path / "migration_plan.csv").exists()
+
+
+
+def test_scanner_algorithm_labels_have_migration_recommendations():
+    from src.problem import vulnerability_score
+
+    assert vulnerability_score("ECC") > 0
+    assert "ML-KEM" in migration_for(row("Key agreement", "ECDH", "VPN"))[0]
+    assert "ML-DSA" in migration_for(row("Signer", "ECDSA", "Digital Signatures"))[0]
+    assert "Confirm ECC role" in migration_for(row("Curve", "ECC", "Configuration Evidence"))[0]
+    assert "Confirm RSA role" in migration_for(row("RSA asset", "RSA", "VPN"))[0]
