@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0",
+  "profile_name": "Crypto Inventory & Migration Planner reproducibility profile",
+  "capture_status": "declared_target_profile_not_runtime_capture",
+  "platform": {
+    "provider": "GitHub Actions",
+    "runner_label": "ubuntu-latest",
+    "exact_os_release": null,
+    "architecture": null,
+    "cpu_model": null,
+    "memory_bytes": null,
+    "source": ".github/workflows/ci.yml",
+    "note": "The workflow requests ubuntu-latest, whose exact image and hardware are managed by GitHub and are not pinned here. Null fields are intentionally not guessed."
+  },
+  "python": {
+    "requested_version": "3.12",
+    "exact_patch_version": null,
+    "source": ".github/workflows/ci.yml"
+  },
+  "dependency_specification": {
+    "file": "requirements.txt",
+    "versions_pinned": true,
+    "note": "Pinned package versions describe the declared toolchain; installed versions and host details require running scripts/capture_platform_info.py."
+  },
+  "official_environment_check": {
+    "expected_path": "common/env_check.py",
+    "present_in_checkout": false,
+    "status": "not_run",
+    "note": "This is not an official environment-checker result. Replace/update it with a captured profile and run the organizer's checker if those files are supplied."
+  },
+  "runtime_capture_command": "python scripts/capture_platform_info.py --output platform_A_info.json",
+  "limitations": [
+    "This committed file records declared workflow settings, not a measurement of the submitter's laptop or an official hackathon platform.",
+    "The organizer's common/env_check.py and environment contract were not present in the repository checkout.",
+    "Do not interpret null hardware fields as zero or as official platform values."
+  ]
+}
