@@ -71,8 +71,33 @@ def test_discovery_covers_requested_algorithm_families(tmp_path):
 
 def test_generic_ec_private_key_generation_is_not_assumed_to_be_ecdh(tmp_path):
     (tmp_path / "keys.py").write_text(
-        "key = ec.generate_private_key(ec.SECP256R1())\\n", encoding="utf-8"
+        "key = ec.generate_private_key(ec.SECP256R1())\n", encoding="utf-8"
     )
     found = discover_directory(tmp_path)
     assert "ECDH" not in set(found["algorithm"])
     assert "ECC" in set(found["algorithm"])
+
+
+
+def test_discovery_detects_explicit_rsa_and_dh_key_size_declarations(tmp_path):
+    (tmp_path / "inventory.conf").write_text(
+        "key_algorithm = RSA-4096\n"
+        "legacy_algorithm = RSA 1024\n"
+        "dh_group = DH-2048\n"
+        "modp_group = DH3072\n"
+        "curve = secp256k1\n",
+        encoding="utf-8",
+    )
+    found = discover_directory(tmp_path)
+
+    # These are deliberately plain inventory/configuration declarations, not
+    # Python API calls. They still identify cryptographic algorithm families.
+    rsa_rows = found[found["algorithm"] == "RSA"]
+    dh_rows = found[found["algorithm"] == "DH"]
+    ecc_rows = found[found["algorithm"] == "ECC"]
+
+    assert list(rsa_rows["line_number"]) == [1, 2]
+    assert list(dh_rows["line_number"]) == [3, 4]
+    assert list(ecc_rows["line_number"]) == [5]
+    assert "FIPS 204 ML-DSA" in rsa_rows.iloc[0]["fips_migration"]
+    assert dh_rows.iloc[0]["fips_migration"].startswith("FIPS 203 ML-KEM")

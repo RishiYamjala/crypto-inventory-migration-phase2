@@ -28,7 +28,7 @@
 
 ### Part A — Crypto inventory → migration plan
 
-- Ten-row sample inventory in `data/raw/inventory.csv`
+- Ten-row Phase 1 sample inventory in `data/raw/inventory.csv` and a dedicated nine-row Phase 2 demo in `examples/phase2_inventory_demo.csv`
 - Auditable vulnerability, sensitivity, lifespan, and risk scoring tables
 - HNDL detection for long-lived public-key assets in exposed usages
 - NIST-aligned recommendations using ML-KEM, ML-DSA, SLH-DSA, AES-256, AES-256-GCM, SHA-256, and SHA-3
@@ -37,7 +37,7 @@
 #### Run the schema-driven inventory classifier
 
 ```bash
-python run_inventory.py --input data/raw/inventory.csv --output results/tables/crypto_inventory_predictions.csv
+python run_inventory.py --input examples/phase2_inventory_demo.csv --output results/tables/phase2_inventory_predictions.csv
 ```
 
 The command uses only Python's standard library and runs offline. It writes one prediction per input row. The input CSV must include an `algorithm` column and either `asset_id` or `asset_name`; optional risk fields include `data_retention_years`, `internet_exposed`, and `criticality`. Missing or contradictory algorithm/role/parameter evidence is routed to `UNKNOWN` where detectable rather than treated as safe. The output columns, in order, are `asset_id,predicted_label,priority_score,priority_rank,recommended_action,migration_wave,depends_on,rationale`. Migration waves are `Wave 1`, `Wave 2`, `Wave 3`, or `review`. The score uses the task-defined label base, exposure, retention, and criticality components and is capped at 100.
@@ -135,8 +135,8 @@ Estimated SWAP-equivalents are a proxy, not a direct SWAP count. See report.md a
 Use Python 3.11 or 3.12 in a fresh virtual environment. From Windows PowerShell:
 
 ```powershell
-git clone https://github.com/RishiYamjala/crypto-inventory-migration-planner.git
-cd crypto-inventory-migration-planner
+git clone https://github.com/RishiYamjala/crypto-inventory-migration-phase2.git
+cd crypto-inventory-migration-phase2
 py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
@@ -167,6 +167,8 @@ The artifact checklist checks files and basic expected fields; it does not certi
 
 ```text
 ├── README.md                         ← this showcase
+├── run_inventory.py                  ← Phase 2 standard-library inventory CLI
+├── examples/phase2_inventory_demo.csv ← nine-row fixture covering all six labels
 ├── main.ipynb                        ← end-to-end experiment
 ├── requirements.txt                  ← environment specification
 ├── report.md                         ← measured analysis + limitations
@@ -176,7 +178,8 @@ The artifact checklist checks files and basic expected fields; it does not certi
 ├── processors/processor_B.py         ← reproducible nine-qubit model generator
 ├── processors/processor_A.json       ← generated five-qubit branching model
 ├── processors/processor_B.json       ← generated nine-qubit heavy-hex-inspired model
-├── src/problem.py                    ← scoring + migration logic
+├── src/problem.py                    ← Phase 1 scoring + migration logic
+├── src/dashboard_inventory.py        ← Phase 2 dashboard upload/export adapter
 ├── src/processors.py                 ← JSON loading + noise model
 ├── src/routing.py                    ← Grover + transpilation
 ├── src/metrics.py                    ← A/B metrics
@@ -281,11 +284,14 @@ Use this only against infrastructure and files for which you have explicit autho
 
 ## Optional dashboard
 
-The repository also includes a local Streamlit dashboard with three views:
+The repository also includes a local Streamlit dashboard with four clearly separated views:
 
-- **Overview** — total assets, migration-assessment count, Phase 1 count, HNDL flags
-- **Inventory & roadmap** — prioritized assets, role-aware risk rationale, evidence, and next step
-- **Processor A/B** — measured benchmark comparison from the CSV outputs
+- **Overview** — high-level summary of the Phase 1 sample inventory and benchmark.
+- **Phase 2 CSV planner** — upload a CSV, run the same classifier and scoring functions as `run_inventory.py`, inspect labels/waves/manual-review counts, and download the exact eight-column migration plan.
+- **Phase 1 Inventory & roadmap** — inspect the original Phase 1 risk table and its evidence; this legacy view uses the Phase 1 scoring model and is deliberately not presented as the Phase 2 CLI output.
+- **Processor A/B** — measured benchmark comparison from the CSV outputs.
+
+Uploaded rows are processed by the app environment with the repository's deterministic heuristic; the dashboard does not call an external AI service. Official classification metrics remain unverified until the official labeled dataset and evaluator are available.
 
 Launch it with:
 
