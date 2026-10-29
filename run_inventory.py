@@ -197,14 +197,19 @@ def _parameter_issue(algorithm: str, params: str) -> bool:
     for markers, allowed in checks:
         if any(marker in a for marker in markers):
             canonical = re.sub(r"BITS?$", "", p)
-            if canonical not in allowed and not any(canonical.endswith(item) for item in allowed):
+            # Exact normalized identifiers only: suffix matching accepted malformed
+            # values such as "untrusted-768" as if they were a valid parameter set.
+            if canonical not in allowed:
                 return True
 
     if "AES" in a:
-        bits = re.search(r"(128|192|256)", p)
-        if bits and bits.group(1) not in {"128", "192", "256"}:
-            return True
+        algorithm_bits = re.search(r"AES(?:GCM|CBC|ECB|CTR|XTS|CCM|OCB)?(128|192|256)", a)
+        parameter_bits = re.fullmatch(r"(?:AES)?(?:GCM|CBC|ECB|CTR|XTS|CCM|OCB)?(128|192|256)(?:BITS?)?", p)
+        # Reject malformed explicit sizes and disagreement between an embedded
+        # AES size and the inventory's explicit parameter field.
         if p.isdigit() and p not in {"128", "192", "256"}:
+            return True
+        if algorithm_bits and parameter_bits and algorithm_bits.group(1) != parameter_bits.group(1):
             return True
     # Stateful hash-based signature parameter identifiers must be recognizable
     # whenever the inventory explicitly supplies a parameter value.
