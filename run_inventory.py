@@ -203,7 +203,7 @@ def _parameter_issue(algorithm: str, params: str) -> bool:
                 return True
 
     if "AES" in a:
-        algorithm_bits = re.search(r"AES(?:GCM|CBC|ECB|CTR|XTS|CCM|OCB)?(128|192|256)", a)
+        algorithm_bits = re.search(r"AES(128|192|256)", a)
         parameter_bits = re.fullmatch(r"(?:AES)?(?:GCM|CBC|ECB|CTR|XTS|CCM|OCB)?(128|192|256)(?:BITS?)?", p)
         # Reject malformed explicit sizes and disagreement between an embedded
         # AES size and the inventory's explicit parameter field.
