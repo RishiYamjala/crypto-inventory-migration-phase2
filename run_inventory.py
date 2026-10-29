@@ -42,7 +42,7 @@ def classify_algorithm(value) -> str:
     if any(x in s for x in ("AES", "SHA256", "SHA384", "SHA512", "SHA3", "CHACHA20")):
         return "SYMMETRIC_OR_HASH"
     # ML-DSA was classified above; plain DSA is a classical signature family.
-    if any(x in s for x in ("RSA", "DSA", "ECDSA", "ECDH", "ED25519", "ED448", "FFDHE", "SECP256K1", "P256", "P384", "P521")) or re.search(r"(^|[^A-Z])DH($|[^A-Z])", s):
+    if any(x in s for x in ("RSA", "DSA", "ECDSA", "ECDH", "ED25519", "ED448", "FFDHE", "SECP256K1", "P256", "P384", "P521")) or s.startswith("DH"):
         return "QUANTUM_VULNERABLE"
     return "UNKNOWN"
 
