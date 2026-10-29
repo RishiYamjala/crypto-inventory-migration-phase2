@@ -76,7 +76,7 @@ The Phase 1 guide asks for a static-analysis scan of a public open-source reposi
 python scripts/evaluate_public_repo.py --repo psf/requests --ref v2.34.2
 ```
 
-It writes candidate findings to `results/tables/public_repo_scan_findings.csv` and a summary to `results/tables/public_repo_scan_summary.json`. Scanner execution time is measured separately from download time. The runner writes a review template to `results/tables/public_repo_ground_truth_template.csv`; copy that generated file to `data/raw/psp2_ground_truth.csv` before annotating it. Annotate every detected path/algorithm pair and add any true findings the scanner missed. Keep the generated `repository` and `ref` columns unchanged, then set `is_present=true/false` and `reviewed=true` for every candidate. Add missed true findings with the same repository/ref values. The evaluator rejects labels from a different repository or revision. Precision and recall intentionally remain **pending** until the full audit scope is reviewed:
+It writes candidate findings to `results/tables/public_repo_scan_findings.csv` and a summary to `results/tables/public_repo_scan_summary.json`. Scanner execution time is measured separately from download time. The runner writes a revision-specific review template to `results/tables/public_repo_ground_truth_template.csv`; copy that generated file to `data/raw/psp2_ground_truth.csv` before annotating it. The tracked `data/raw/psp2_ground_truth_template.csv` is a blank schema-only template; prefer the generated one because it is prefilled with the exact repository and revision. Annotate every detected path/algorithm pair and add any true findings the scanner missed. Keep the generated `repository` and `ref` columns unchanged, then set `is_present=true/false` and `reviewed=true` for every candidate. Add missed true findings with the same repository/ref values. The evaluator rejects labels from a different repository or revision. Precision and recall intentionally remain **pending** until the full audit scope is reviewed:
 
 ```powershell
 Copy-Item results/tables/public_repo_ground_truth_template.csv data/raw/psp2_ground_truth.csv
@@ -369,8 +369,8 @@ These are supplementary simulator/compiler experiments using participant-defined
 The Phase 2 inventory planner now includes separate tooling for reviewed-label evaluation and synthetic scale benchmarking:
 
 - Standards mapping and known parameter-validation limits: [docs/ALGORITHM_PARAMETER_AUDIT.md](docs/ALGORITHM_PARAMETER_AUDIT.md)
-- Labeled quality metrics (requires a manually reviewed CSV with `asset_id,true_label`):
-  `python scripts/evaluate_inventory.py --ground-truth data/raw/ground_truth.csv --predictions results/tables/crypto_inventory_predictions.csv --output results/inventory_metrics.json`
+- Labeled quality metrics (requires a manually reviewed CSV with `asset_id,true_label`; first create that ground-truth file from reviewed labels, then run the Phase 2 classifier command above):
+  `python scripts/evaluate_inventory.py --ground-truth data/raw/ground_truth.csv --predictions results/tables/phase2_inventory_predictions.csv --output results/inventory_metrics.json`
 - Larger synthetic inventory benchmark (performance only; not a quality score):
   `python scripts/benchmark_inventory.py --sizes 1000 10000 50000 --output results/inventory_scale_benchmark.json`
 
