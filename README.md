@@ -28,7 +28,7 @@
 
 ### Part A — Crypto inventory → migration plan
 
-- Ten-row sample inventory in `data/raw/inventory.csv`
+- Ten-row Phase 1 sample inventory in `data/raw/inventory.csv` and a dedicated eight-row Phase 2 demo in `examples/phase2_inventory_demo.csv`
 - Auditable vulnerability, sensitivity, lifespan, and risk scoring tables
 - HNDL detection for long-lived public-key assets in exposed usages
 - NIST-aligned recommendations using ML-KEM, ML-DSA, SLH-DSA, AES-256, AES-256-GCM, SHA-256, and SHA-3
@@ -37,7 +37,7 @@
 #### Run the schema-driven inventory classifier
 
 ```bash
-python run_inventory.py --input data/raw/inventory.csv --output results/tables/crypto_inventory_predictions.csv
+python run_inventory.py --input examples/phase2_inventory_demo.csv --output results/tables/phase2_inventory_predictions.csv
 ```
 
 The command uses only Python's standard library and runs offline. It writes one prediction per input row. The input CSV must include an `algorithm` column and either `asset_id` or `asset_name`; optional risk fields include `data_retention_years`, `internet_exposed`, and `criticality`. Missing or contradictory algorithm/role/parameter evidence is routed to `UNKNOWN` where detectable rather than treated as safe. The output columns, in order, are `asset_id,predicted_label,priority_score,priority_rank,recommended_action,migration_wave,depends_on,rationale`. Migration waves are `Wave 1`, `Wave 2`, `Wave 3`, or `review`. The score uses the task-defined label base, exposure, retention, and criticality components and is capped at 100.
