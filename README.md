@@ -51,6 +51,19 @@ To run the full test suite, use `python -m pytest -q`. The schema-specific tests
 - Identical A/B conditions: `4096` shots, optimization level `1`, seed `42`, and shared noise model
 - Measured success probability, uncertainty, depth, two-qubit gates, SWAP estimate, physical qubits, total operations, runtime, and ideal reference
 
+### Supplementary Processor D model
+
+The repository also includes `processors/processor_D.json`, an **11-qubit participant-defined research model** with 13 undirected couplings, no triangles, and graph diameter 5. Its matching generator is `processors/processor_D.py`. The model uses the repository's explicitly assumed basis gates and simulator noise values so its configuration can be validated and loaded reproducibly.
+
+Processor D is marked `official_challenge_kit_verified: false`: it is a synthetic topology for exploratory simulation, not an official organizer-supplied processor or calibrated hardware. The controlled benchmark described above remains the documented A/B experiment; adding D does not silently change the existing A/B results or imply a fair three-way benchmark.
+
+Validate the processor configurations with:
+
+```bash
+python validate_processors.py
+python -m pytest -q tests/test_processor_d.py
+```
+
 ## PS-P2 scanner evaluation
 
 The Phase 1 guide asks for a static-analysis scan of a public open-source repository and reports of precision, recall, and scanner execution time. The local synthetic fixture is a safe demo, **not** that evaluation. This repository now includes a reproducible runner for a public GitHub repository:
