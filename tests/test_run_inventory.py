@@ -280,3 +280,11 @@ def test_csv_values_with_commas_and_semicolons_are_not_used_as_algorithm_aliases
     result = build_predictions(source)
     validate_predictions(result, source)
     assert result.loc[result.asset_id == "a", "depends_on"].item() == "b"
+
+
+def test_stateful_and_slhdsa_parameters_reject_lookalike_or_conflicting_values():
+    assert _parameter_issue("SLH-DSA-SHA2-128s", "SHA2-128f") is True
+    assert _parameter_issue("SLH-DSA-SHA2-128s", "SHA2-128s") is False
+    assert _parameter_issue("LMS", "garbage-M32-H10") is True
+    assert _parameter_issue("XMSS", "prefix-XMSS-SHA2_10_256-suffix") is True
+    assert _parameter_issue("XMSS", "XMSS-SHA2_10_256") is False
