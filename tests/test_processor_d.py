@@ -63,5 +63,5 @@ def test_three_processor_comparison_includes_d_and_deltas():
     rows = compare_three_metrics(a, b, d)
     success_row = next(row for row in rows if row["Metric"] == "success_probability")
     assert list(success_row) == ["Metric", "Processor A", "Processor B", "Processor D", "B - A", "D - A", "D - B"]
-    assert success_row["D - A"] == 0.1
-    assert success_row["D - B"] == -0.1
+    assert abs(success_row["D - A"] - 0.1) < 1e-12
+    assert abs(success_row["D - B"] + 0.1) < 1e-12
