@@ -54,3 +54,15 @@ The available **Phase 1 Master Guide V2** says Phase 1 requires only participant
 ## Final status
 
 **Code-level fixes are merged into `main`.** After the merge commit `6166fc6d32c48166848b3923de4208a1e5c5583c`, the Python tests and project-validation workflow both completed successfully. This establishes repository-level checks only; official compliance and official scoring remain unverified until the organizer's exact Phase 2 brief, labeled dataset, and evaluator are available and used.
+
+
+## Local smoke verification added (not official)
+
+The checkout now contains:
+- `examples/inventory_dev.csv` and `examples/inventory_dev_labels.csv`: a synthetic eleven-row regression fixture, separate from the organizer's official `P2_inventory/` dataset.
+- `scripts/run_phase2_smoke_evaluation.py`: executes the local classifier, scores the hand-authored expected labels with `scripts/evaluate_inventory.py`, and compares it with an algorithm-name-only baseline.
+- `scripts/crypto_library_selftest.py`: verifies that pinned library calls for ML-KEM-768, ML-DSA-65 and AES-256-GCM can complete a round trip. It does not implement cryptographic primitives itself.
+- `scripts/capture_platform_info.py`: captures actual runtime and installed dependency metadata. CI stores its capture as an artifact.
+- `platform_A_info.json`: a committed declarative profile of the workflow's requested environment; unpinned machine details remain null and the file is not official `common/env_check.py` output.
+
+CI is configured to run these smoke checks and upload generated local outputs. They do not close the official-evaluation gap: the organizer's `P2_inventory/inventory_dev.csv`, labels, baseline classifier, evaluator, environment checker, README template, and report template are still required. No official Macro-F1 or related evaluator-specific metrics should be claimed from the synthetic fixture.
