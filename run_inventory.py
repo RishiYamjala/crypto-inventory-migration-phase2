@@ -418,20 +418,28 @@ def _stable_asset_ids(rows: list[dict[str, Any]]) -> list[str]:
     return ids
 
 
-def _dependency_ids(value: Any, known_ids: set[str], rows: list[dict[str, Any]], asset_ids: list[str]) -> str:
+def _dependency_aliases(rows: list[dict[str, Any]], asset_ids: list[str]) -> dict[str, str]:
+    """Build a single-pass lookup; duplicate names are intentionally ambiguous."""
+    aliases = {asset_id: asset_id for asset_id in asset_ids}
+    counts: dict[str, int] = {}
+    for row in rows:
+        name = _text(row.get("asset_name"))
+        if name:
+            key = name.casefold()
+            counts[key] = counts.get(key, 0) + 1
+    for index, row in enumerate(rows):
+        name = _text(row.get("asset_name"))
+        key = name.casefold()
+        if name and counts[key] == 1:
+            aliases.setdefault(name, asset_ids[index])
+            aliases.setdefault(key, asset_ids[index])
+    return aliases
+
+
+def _dependency_ids(value: Any, known_ids: set[str], aliases: dict[str, str]) -> str:
     raw = _text(value)
     if not raw:
         return ""
-    aliases: dict[str, str] = {asset_id: asset_id for asset_id in asset_ids}
-    names = [_text(row.get("asset_name")) for row in rows]
-    name_counts: dict[str, int] = {}
-    for name in names:
-        if name:
-            name_counts[name.casefold()] = name_counts.get(name.casefold(), 0) + 1
-    for index, name in enumerate(names):
-        key = name.casefold()
-        if name and name_counts[key] == 1 and key not in aliases:
-            aliases[key] = asset_ids[index]
     valid = []
     for part in re.split(r"[;,|]", raw):
         item = part.strip()
@@ -449,6 +457,7 @@ def build_predictions(input_csv: str | Path) -> list[dict[str, Any]]:
         raise ValueError("Input CSV must include an 'algorithm' or recognized algorithm-name column")
     asset_ids = _stable_asset_ids(rows)
     known_ids = set(asset_ids)
+    dependency_aliases = _dependency_aliases(rows, asset_ids)
     results = []
     for index, row in enumerate(rows):
         algorithm = _first(row, ("algorithm",))
@@ -470,7 +479,7 @@ def build_predictions(input_csv: str | Path) -> list[dict[str, Any]]:
             "priority_rank": 0,
             "recommended_action": _recommend(label, algorithm, row),
             "migration_wave": wave,
-            "depends_on": _dependency_ids(_first(row, ("depends_on",)), known_ids, rows, asset_ids),
+            "depends_on": _dependency_ids(_first(row, ("depends_on",)), known_ids, dependency_aliases),
             "rationale": _rationale(row, label, score),
         })
     order = sorted(range(len(results)), key=lambda i: (-results[i]["priority_score"], i))
