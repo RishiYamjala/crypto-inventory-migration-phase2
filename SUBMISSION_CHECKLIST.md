@@ -15,18 +15,33 @@ This checklist tracks the PS-P2 inventory CLI against the user-provided task req
 - [x] Migration waves use the exact strings `Wave 1`, `Wave 2`, `Wave 3`, and `review`.
 - [x] Category-specific recommendations reference FIPS 203 ML-KEM for key establishment and FIPS 204 ML-DSA for signatures, with manual review for unknown roles.
 - [x] Tests cover CLI execution, output schema/order, classification, parameter mismatches, dependencies, scoring, wave assignment, and a 1,000-row input.
+- [x] Added a local `examples/inventory_dev.csv` smoke fixture with explicit expected labels; clearly distinguished from the organizer's missing dataset.
+- [x] Added a repeatable algorithm-only baseline comparison and local metrics generator. Outputs are marked local/synthetic, not official results.
+- [x] Added pinned `cryptography` and `pqcrypto` dependencies plus runtime smoke tests for library-backed AES-GCM, ML-KEM-768, and ML-DSA-65 operations.
+- [x] Added `platform_A_info.json` as a declared workflow profile and a runtime capture script. The manifest does not invent missing hardware details.
 
 ## Blocked / not verifiable from this checkout
 
-- [ ] Official `P2_inventory/inventory_dev.csv` and `P2_inventory/inventory_dev_labels.csv` are absent.
-- [ ] Official `P2_inventory/baseline_classifier.py` and `P2_inventory/evaluate.py` are absent; Macro-F1, `unsafe_unknown_count`, and `hash_as_public_key_count` cannot be computed.
-- [ ] `common/env_check.py`, its official environment contract, and `common/templates/report_template.md` are absent. Do not fabricate `platform_A_info.json` or official baseline/evaluation results.
+- [ ] Official `P2_inventory/inventory_dev.csv` and `P2_inventory/inventory_dev_labels.csv` are absent. The committed `examples/inventory_dev.csv` is a synthetic smoke fixture and is not a substitute.
+- [ ] Official `P2_inventory/baseline_classifier.py` and `P2_inventory/evaluate.py` are absent; official Macro-F1, `unsafe_unknown_count`, and `hash_as_public_key_count` cannot be computed. The local algorithm-only baseline comparison is regression evidence only.
+- [ ] `common/env_check.py`, its official environment contract, `common/templates/README_template.md`, and `common/templates/report_template.md` are absent. `platform_A_info.json` is an honest declared profile, not official checker output; exact README/report-template compliance remains unverified.
 - [ ] Official label conventions and evaluator-specific required columns cannot be confirmed without the organizer evaluator.
-- [ ] Final `predictions.csv` and `results/inventory_eval_metrics.json` must be generated using the official labeled dataset/evaluator once supplied.
+- [ ] Final official `predictions.csv` and `results/inventory_eval_metrics.json` must be regenerated using the official labeled dataset/evaluator once supplied. The similarly named local smoke report is explicitly not an official score.
 - [ ] Precision/recall for the public-repository scanner remain pending until a complete manual ground-truth audit has been reviewed.
 - [ ] The current repository contains no `processors/processor_C.json`. Processor C/D scope differs between the available Phase 1 Master Guide and the event FAQ; confirm the team's current Phase 2 brief before inventing a C model or treating architecture artifacts as required.
 - [ ] The Processor D model is a participant-defined 12-qubit simulation design, not an official hardware configuration.
 
 ## Evaluation results
 
-Official evaluation: **not run**. The required labeled dataset and evaluator are absent. Synthetic samples and unit tests are not substitutes for the official score. See `docs/PHASE2_COMPLIANCE_AUDIT.md` for the source and scope notes.
+Official evaluation: **not run**. The required labeled dataset, baseline, evaluator, environment checker, and exact templates are absent. The repo now has a separate synthetic smoke-test output and baseline comparison, but those are not substitutes for the official score. See `docs/PHASE2_COMPLIANCE_AUDIT.md` for the source and scope notes.
+
+
+## Added local verification (not official)
+
+The workflow now:
+1. Runs the eight-column CLI against `examples/inventory_dev.csv`.
+2. Generates `results/inventory_eval_metrics.json` and `results/tables/inventory_baseline_comparison.json` on that synthetic fixture, comparing the main classifier to an algorithm-name-only baseline.
+3. Performs library-backed AES-GCM, ML-KEM-768, and ML-DSA-65 round trips using pinned `cryptography` and `pqcrypto` packages.
+4. Captures actual CI host/package metadata into `platform_A_info.ci.json` as a workflow artifact.
+
+The committed `platform_A_info.json` documents declared settings only; runtime metadata is available from the capture script/CI artifact. The official environment check and evaluator remain blocked until organizers provide their files.
