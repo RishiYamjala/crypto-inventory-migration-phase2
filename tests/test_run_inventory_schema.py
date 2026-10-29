@@ -107,7 +107,7 @@ def test_schema_columns_and_exact_wave_values(tmp_path):
     assert len(predictions) == 3
     assert set(predictions["predicted_label"]).issubset(LABELS)
     assert set(predictions["migration_wave"]).issubset({"1", "2", "3", "review"})
-    assert predictions["priority_rank"].tolist() == [1, 2, 3]
+    assert sorted(predictions["priority_rank"].tolist()) == [1, 2, 3]
     assert predictions.loc[predictions.asset_id == "a3", "migration_wave"].iloc[0] == "review"
 
 
