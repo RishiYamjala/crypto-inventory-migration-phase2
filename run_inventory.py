@@ -144,10 +144,23 @@ def classify_algorithm(value: Any) -> str:
 
 
 def _parameter_issue(algorithm: str, params: str) -> bool:
-    """Return True only when an explicitly supplied parameter is contradictory."""
+    """Return True for an explicit invalid or contradictory parameter set."""
     a, p = _norm(algorithm), _norm(params)
     if not p:
-        return False  # Missing metadata is scored/reviewed, not invented as invalid.
+        return False  # Missing metadata is uncertainty, not proof of invalidity.
+
+    # Detect disagreement between a parameter embedded in the algorithm name and
+    # a separately supplied parameter-set column.
+    embedded = None
+    for pattern in (r"(?:MLKEM|KYBER)(512|768|1024)", r"MLDSA(44|65|87)"):
+        match = re.search(pattern, a)
+        if match:
+            embedded = match.group(1)
+            break
+    if embedded:
+        supplied_digits = re.search(r"(512|768|1024|44|65|87)", p)
+        if supplied_digits and supplied_digits.group(1) != embedded:
+            return True
 
     # Recognized standardized parameter-set identifiers.
     checks = (
@@ -314,20 +327,53 @@ def _rationale(row: pd.Series, label: str, score: int) -> str:
     )
 
 
+def _stable_asset_ids(source: pd.DataFrame) -> list[str]:
+    """Use provided IDs, or derive stable readable IDs from asset names when absent."""
+    if "asset_id" in source.columns:
+        ids = [_text(v) for v in source["asset_id"].tolist()]
+        if any(not value for value in ids):
+            raise ValueError("Every input row must have a nonblank asset_id")
+    elif "asset_name" in source.columns:
+        bases = []
+        for index, value in enumerate(source["asset_name"].tolist(), start=1):
+            slug = re.sub(r"[^a-z0-9]+", "-", _text(value).lower()).strip("-")
+            bases.append(slug or f"asset-{index}")
+        ids = []
+        counts: dict[str, int] = {}
+        for base in bases:
+            counts[base] = counts.get(base, 0) + 1
+            ids.append(base if counts[base] == 1 else f"{base}-{counts[base]}")
+    else:
+        raise ValueError("Input CSV must include 'asset_id' or 'asset_name'")
+
+    if len(set(ids)) != len(ids):
+        raise ValueError("Input asset_id values must be unique")
+    return ids
+
+
+def _dependency_ids(value: Any, known_ids: set[str]) -> str:
+    """Keep only dependency references that exactly match known asset IDs."""
+    raw = _text(value)
+    if not raw:
+        return ""
+    parts = re.split(r"[;,|]", raw)
+    valid = []
+    for part in parts:
+        item = part.strip()
+        if item in known_ids and item not in valid:
+            valid.append(item)
+    return ";".join(valid)
+
+
 def build_predictions(input_csv: str | Path) -> pd.DataFrame:
     source = pd.read_csv(input_csv, dtype=object, keep_default_na=True)
     if "algorithm" not in source.columns:
         raise ValueError("Input CSV must include an 'algorithm' column")
-    if "asset_id" not in source.columns:
-        # The schema requires stable source IDs; asset_name is not silently substituted.
-        raise ValueError("Input CSV must include an 'asset_id' column")
-    if source["asset_id"].isna().any() or source["asset_id"].astype(str).str.strip().eq("").any():
-        raise ValueError("Every input row must have a nonblank asset_id")
-    if source["asset_id"].astype(str).duplicated().any():
-        raise ValueError("Input asset_id values must be unique")
+    asset_ids = _stable_asset_ids(source)
+    known_ids = set(asset_ids)
 
     rows = []
-    for _, row in source.iterrows():
+    for row_index, (_, row) in enumerate(source.iterrows()):
         algorithm = _first(row, ("algorithm",))
         label = classify_record(row)
         score = _score(row, label)
@@ -346,10 +392,10 @@ def build_predictions(input_csv: str | Path) -> pd.DataFrame:
             wave = "3"
 
         # Only actual asset IDs supplied in the input can be dependencies.
-        depends = _first(row, ("depends_on",))
+        depends = _dependency_ids(_first(row, ("depends_on",)), known_ids)
         rationale = _rationale(row, label, score)
         rows.append({
-            "asset_id": _text(row["asset_id"]),
+            "asset_id": asset_ids[row_index],
             "predicted_label": label,
             "priority_score": score,
             "recommended_action": action,
@@ -388,12 +434,24 @@ def validate_predictions(df: pd.DataFrame, input_csv: str | Path | None = None) 
         raise ValueError("priority_rank must be a positive integer")
     if ranks.duplicated().any():
         raise ValueError("priority_rank values must be unique")
+    if df["recommended_action"].map(_text).eq("").any():
+        raise ValueError("recommended_action cannot be blank")
+    if df["rationale"].map(_text).eq("").any():
+        raise ValueError("rationale cannot be blank")
+    if sorted(ranks.astype(int).tolist()) != list(range(1, len(df) + 1)):
+        raise ValueError("priority_rank must be a contiguous ranking from 1 through row count")
     if input_csv is not None:
         source = pd.read_csv(input_csv, dtype=object, keep_default_na=True)
         if len(source) != len(df):
             raise ValueError("Output must contain exactly one prediction per input row")
-        if source["asset_id"].astype(str).tolist() != df["asset_id"].astype(str).tolist():
-            raise ValueError("Output asset_id order/values must match input exactly")
+        expected_ids = _stable_asset_ids(source)
+        if expected_ids != df["asset_id"].astype(str).tolist():
+            raise ValueError("Output asset_id order/values must match source IDs or stable generated IDs")
+        valid_ids = set(expected_ids)
+        for dependency_cell in df["depends_on"].fillna("").astype(str):
+            dependencies = [item for item in dependency_cell.split(";") if item]
+            if any(item not in valid_ids for item in dependencies):
+                raise ValueError("depends_on may contain only valid asset IDs")
 
 
 def main() -> None:
