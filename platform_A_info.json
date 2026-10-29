@@ -1,37 +1,119 @@
 {
   "schema_version": "1.0",
-  "profile_name": "Crypto Inventory & Migration Planner reproducibility profile",
-  "capture_status": "declared_target_profile_not_runtime_capture",
+  "profile_name": "runtime-captured environment",
+  "capture_status": "runtime_captured",
+  "captured_at_utc": "2026-10-29T22:16:10.300380+00:00",
+  "capture_context": {
+    "workflow": "Project validation",
+    "github_run_id": "40964411377",
+    "github_run_number": "118",
+    "github_sha": "a9ff33791a70ffc7a45cc9f5b3420a64e22cb24c",
+    "note": "Captured on the GitHub Actions runner used for pull-request validation. This is not the submitter's personal machine or official challenge hardware."
+  },
   "platform": {
-    "provider": "GitHub Actions",
-    "runner_label": "ubuntu-latest",
-    "exact_os_release": null,
-    "architecture": null,
-    "cpu_model": null,
-    "memory_bytes": null,
-    "source": ".github/workflows/ci.yml",
-    "note": "The workflow requests ubuntu-latest, whose exact image and hardware are managed by GitHub and are not pinned here. Null fields are intentionally not guessed."
+    "system": "Linux",
+    "release": "7.0.0-1017-azure",
+    "version": "#17~24.04.1-Ubuntu SMP PREEMPT Thu Sep 24 18:46:57 UTC 2026",
+    "machine": "x86_64",
+    "processor": "x86_64",
+    "cpu_count": 4,
+    "memory_bytes": 16760340480
   },
   "python": {
-    "requested_version": "3.12",
-    "exact_patch_version": null,
-    "source": ".github/workflows/ci.yml"
+    "version": "3.12.15",
+    "implementation": "CPython",
+    "executable_name": "python"
   },
-  "dependency_specification": {
-    "file": "requirements.txt",
-    "versions_pinned": true,
-    "note": "Pinned package versions describe the declared toolchain; installed versions and host details require running scripts/capture_platform_info.py."
+  "github_actions": {
+    "github_actions": "true",
+    "github_run_id": "40964411377",
+    "github_run_number": "118",
+    "github_sha": "a9ff33791a70ffc7a45cc9f5b3420a64e22cb24c",
+    "github_workflow": "Project validation",
+    "runner_arch": "X64",
+    "runner_os": "Linux"
+  },
+  "dependencies": {
+    "cryptography": {
+      "installed_version": "50.0.2",
+      "matches_pin": "true",
+      "pinned_version": "50.0.2"
+    },
+    "ipykernel": {
+      "installed_version": "6.30.1",
+      "matches_pin": "true",
+      "pinned_version": "6.30.1"
+    },
+    "matplotlib": {
+      "installed_version": "3.10.3",
+      "matches_pin": "true",
+      "pinned_version": "3.10.3"
+    },
+    "nbconvert": {
+      "installed_version": "7.16.6",
+      "matches_pin": "true",
+      "pinned_version": "7.16.6"
+    },
+    "nbformat": {
+      "installed_version": "5.10.4",
+      "matches_pin": "true",
+      "pinned_version": "5.10.4"
+    },
+    "networkx": {
+      "installed_version": "3.5",
+      "matches_pin": "true",
+      "pinned_version": "3.5"
+    },
+    "notebook": {
+      "installed_version": "7.4.4",
+      "matches_pin": "true",
+      "pinned_version": "7.4.4"
+    },
+    "numpy": {
+      "installed_version": "2.2.6",
+      "matches_pin": "true",
+      "pinned_version": "2.2.6"
+    },
+    "pandas": {
+      "installed_version": "2.2.3",
+      "matches_pin": "true",
+      "pinned_version": "2.2.3"
+    },
+    "pqcrypto": {
+      "installed_version": "0.4.0",
+      "matches_pin": "true",
+      "pinned_version": "0.4.0"
+    },
+    "pylatexenc": {
+      "installed_version": "2.10",
+      "matches_pin": "true",
+      "pinned_version": "2.10"
+    },
+    "pytest": {
+      "installed_version": "8.4.1",
+      "matches_pin": "true",
+      "pinned_version": "8.4.1"
+    },
+    "qiskit": {
+      "installed_version": "1.4.5",
+      "matches_pin": "true",
+      "pinned_version": "1.4.5"
+    },
+    "qiskit-aer": {
+      "installed_version": "0.17.2",
+      "matches_pin": "true",
+      "pinned_version": "0.17.2"
+    },
+    "streamlit": {
+      "installed_version": "1.48.1",
+      "matches_pin": "true",
+      "pinned_version": "1.48.1"
+    }
   },
   "official_environment_check": {
     "expected_path": "common/env_check.py",
     "present_in_checkout": false,
     "status": "not_run",
-    "note": "This is not an official environment-checker result. Replace/update it with a captured profile and run the organizer's checker if those files are supplied."
-  },
-  "runtime_capture_command": "python scripts/capture_platform_info.py --output platform_A_info.json",
-  "limitations": [
-    "This committed file records declared workflow settings, not a measurement of the submitter's laptop or an official hackathon platform.",
-    "The organizer's common/env_check.py and environment contract were not present in the repository checkout.",
-    "Do not interpret null hardware fields as zero or as official platform values."
-  ]
+    "note": "Runtime capture does not replace the organizer's environment checker or its schema."
+  }
 }
