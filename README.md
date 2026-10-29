@@ -66,7 +66,26 @@ python -m pytest -q tests/test_processor_d.py
 
 ## Phase 2 compliance status
 
-The CLI's heuristic and tests are not an official score. The organizer's Phase 2 development dataset, labels, baseline/evaluator, environment checker, and report template are not present in this checkout. See [the Phase 2 compliance audit](docs/PHASE2_COMPLIANCE_AUDIT.md). Do not report official Macro-F1 or evaluator metrics until those materials are supplied and the required evaluation is run.
+The CLI's heuristic and tests are not an official score. This repository now includes a repeatable local development-fixture run, a simple algorithm-only baseline comparison, a vetted-library self-test, and platform capture tooling. Those provide reproducible smoke-test evidence only; they do not replace the organizer's official dataset, labels, baseline/evaluator, environment checker, or report template. See [the Phase 2 compliance audit](docs/PHASE2_COMPLIANCE_AUDIT.md).
+
+### Local Phase 2 smoke verification
+
+Run these commands from the repository root after installing `requirements.txt`:
+
+```bash
+python run_inventory.py --input examples/inventory_dev.csv --output results/tables/inventory_dev_predictions.csv
+python scripts/run_phase2_smoke_evaluation.py
+python scripts/crypto_library_selftest.py --output results/crypto_library_selftest.json
+python scripts/capture_platform_info.py --output platform_A_info.json
+```
+
+`examples/inventory_dev.csv` is a small **project-authored regression fixture**, not the organizer's `P2_inventory/inventory_dev.csv`. `examples/inventory_dev_labels.csv` contains expected fixture labels for regression checks. `scripts/run_phase2_smoke_evaluation.py` writes a six-label evaluation report and compares the role-aware/parameter-aware result against an intentionally simple algorithm-name-only baseline. The generated `results/inventory_eval_metrics.json` and `results/tables/inventory_baseline_comparison.json` are explicitly marked `LOCAL_SMOKE_ONLY_NOT_OFFICIAL`; their scores must not be described as official hackathon metrics.
+
+`platform_A_info.json` records declared workflow settings and carefully leaves unpinned machine details null. The runtime capture script records the actual host and installed package versions when run; CI also saves its measured snapshot as `platform_A_info.ci.json` in the validation artifact. Neither file can stand in for the organizer's absent `common/env_check.py`.
+
+The inventory classifier does not implement cryptographic primitives. The pinned dependencies include `cryptography` and `pqcrypto`, and `scripts/crypto_library_selftest.py` exercises library-provided AES-256-GCM, ML-KEM-768, and ML-DSA-65 operations. This is a library integration smoke test, not a security certification or production key-management design.
+
+**Still blocked from full official verification:** the official `P2_inventory/inventory_dev.csv` and label file, `P2_inventory/baseline_classifier.py`, `P2_inventory/evaluate.py`, `common/env_check.py`, `common/templates/README_template.md`, and the official report template are not in this checkout. They must be supplied by the organizer before official evaluation metrics or exact template compliance can be claimed.
 
 ## PS-P2 scanner evaluation
 
