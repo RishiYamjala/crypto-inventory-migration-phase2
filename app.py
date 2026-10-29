@@ -44,7 +44,7 @@ elif page == "Phase 2 CSV planner":
         "Unknown or ambiguous records are sent to manual review; no Macro-F1, precision, "
         "or recall is claimed without reviewed ground truth."
     )
-    sample_path = ROOT / "data" / "raw" / "inventory.csv"
+    sample_path = ROOT / "examples" / "phase2_inventory_demo.csv"
     if sample_path.is_file():
         st.download_button(
             "Download sample inventory CSV",
