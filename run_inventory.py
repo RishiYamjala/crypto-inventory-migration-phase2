@@ -214,18 +214,26 @@ def _parameter_issue(algorithm: str, params: str) -> bool:
             return True
         if algorithm_bits and parameter_bits and algorithm_bits.group(1) != parameter_bits.group(1):
             return True
-    # Stateful hash-based signature parameter identifiers must be recognizable
-    # whenever the inventory explicitly supplies a parameter value.
+    # SLH-DSA's hash family, security level, and s/f variant are one
+    # parameter identifier; an explicit disagreement must not pass validation.
+    if "SLHDSA" in a or "SPHINCS" in a:
+        alg_set = re.search(r"(SHA2|SHAKE)(128|192|256)(S|F)", a)
+        param_set = re.search(r"(SHA2|SHAKE)?(128|192|256)(S|F)", p)
+        if alg_set and param_set:
+            supplied_family = param_set.group(1) or alg_set.group(1)
+            if (supplied_family, param_set.group(2), param_set.group(3)) != alg_set.groups():
+                return True
+
+    # Stateful hash-based signature identifiers are checked as complete
+    # normalized identifiers; matching a valid-looking substring is insufficient.
     if "LMS" in a:
-        lms_ok = re.search(r"(?:LMS)?(?:SHA256)?M32H(?:5|10|15|20|25)", p)
-        lmots_ok = re.search(r"(?:LMOTS)?(?:SHA256)?N32W(?:1|2|4|8)", p)
-        if not (lms_ok or lmots_ok or p in {"5", "10", "15", "20", "25"}):
+        lms_ok = re.fullmatch(r"(?:LMS)?(?:SHA256)?M32H(?:5|10|15|20|25)", p)
+        if not lms_ok:
             return True
     if "XMSS" in a:
-        xmss_ok = (
-            re.search(r"(?:XMSSMT?)?(?:SHA2|SHAKE)(?:10|16|20|40|60)(?:2|4|6|8)?(?:256|512)", p)
-            or re.search(r"(?:XMSSMT?)?(?:SHA256|SHA512)(?:10|16|20|40|60)", p)
-            or p in {"10", "16", "20"}
+        xmss_ok = re.fullmatch(
+            r"(?:XMSSMT|XMSS)?(?:SHA2|SHAKE)(?:10|16|20|40|60)(?:2|3|4|6|8|12)?(?:256|512)",
+            p,
         )
         if not xmss_ok:
             return True
