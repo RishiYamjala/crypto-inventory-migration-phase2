@@ -1,0 +1,174 @@
+{
+  "evaluation_status": "LOCAL_SMOKE_ONLY_NOT_OFFICIAL",
+  "dataset": "examples/inventory_dev.csv",
+  "ground_truth": "examples/inventory_dev_labels.csv",
+  "rows": 11,
+  "prediction_output": "results/tables/inventory_dev_predictions.csv",
+  "baseline_prediction_output": "results/tables/inventory_dev_baseline_predictions.csv",
+  "project_metrics": {
+    "dataset_rows": 11,
+    "accuracy": 1,
+    "macro_precision_present_classes": 1,
+    "macro_recall_present_classes": 1,
+    "macro_f1_present_classes": 1,
+    "per_class": {
+      "HYBRID": {
+        "support": 1,
+        "true_positive": 1,
+        "false_positive": 0,
+        "false_negative": 0,
+        "true_negative": 10,
+        "precision": 1,
+        "recall": 1,
+        "specificity": 1,
+        "f1": 1
+      },
+      "LEGACY_BROKEN": {
+        "support": 1,
+        "true_positive": 1,
+        "false_positive": 0,
+        "false_negative": 0,
+        "true_negative": 10,
+        "precision": 1,
+        "recall": 1,
+        "specificity": 1,
+        "f1": 1
+      },
+      "QUANTUM_RESISTANT": {
+        "support": 1,
+        "true_positive": 1,
+        "false_positive": 0,
+        "false_negative": 0,
+        "true_negative": 10,
+        "precision": 1,
+        "recall": 1,
+        "specificity": 1,
+        "f1": 1
+      },
+      "QUANTUM_VULNERABLE": {
+        "support": 3,
+        "true_positive": 3,
+        "false_positive": 0,
+        "false_negative": 0,
+        "true_negative": 8,
+        "precision": 1,
+        "recall": 1,
+        "specificity": 1,
+        "f1": 1
+      },
+      "SYMMETRIC_OR_HASH": {
+        "support": 2,
+        "true_positive": 2,
+        "false_positive": 0,
+        "false_negative": 0,
+        "true_negative": 9,
+        "precision": 1,
+        "recall": 1,
+        "specificity": 1,
+        "f1": 1
+      },
+      "UNKNOWN": {
+        "support": 3,
+        "true_positive": 3,
+        "false_positive": 0,
+        "false_negative": 0,
+        "true_negative": 8,
+        "precision": 1,
+        "recall": 1,
+        "specificity": 1,
+        "f1": 1
+      }
+    },
+    "interpretation_note": "Metrics describe only the supplied manually labeled rows. They are not official evaluation results unless the labels and evaluation protocol are official."
+  },
+  "baseline": {
+    "name": "algorithm-name-only baseline",
+    "description": "Uses classify_algorithm only; it does not check role consistency or parameter mismatches.",
+    "metrics": {
+      "dataset_rows": 11,
+      "accuracy": 0.818182,
+      "macro_precision_present_classes": 0.875,
+      "macro_recall_present_classes": 0.888889,
+      "macro_f1_present_classes": 0.837302,
+      "per_class": {
+        "HYBRID": {
+          "support": 1,
+          "true_positive": 1,
+          "false_positive": 0,
+          "false_negative": 0,
+          "true_negative": 10,
+          "precision": 1,
+          "recall": 1,
+          "specificity": 1,
+          "f1": 1
+        },
+        "LEGACY_BROKEN": {
+          "support": 1,
+          "true_positive": 1,
+          "false_positive": 0,
+          "false_negative": 0,
+          "true_negative": 10,
+          "precision": 1,
+          "recall": 1,
+          "specificity": 1,
+          "f1": 1
+        },
+        "QUANTUM_RESISTANT": {
+          "support": 1,
+          "true_positive": 1,
+          "false_positive": 1,
+          "false_negative": 0,
+          "true_negative": 9,
+          "precision": 0.5,
+          "recall": 1,
+          "specificity": 0.9,
+          "f1": 0.666667
+        },
+        "QUANTUM_VULNERABLE": {
+          "support": 3,
+          "true_positive": 3,
+          "false_positive": 1,
+          "false_negative": 0,
+          "true_negative": 7,
+          "precision": 0.75,
+          "recall": 1,
+          "specificity": 0.875,
+          "f1": 0.857143
+        },
+        "SYMMETRIC_OR_HASH": {
+          "support": 2,
+          "true_positive": 2,
+          "false_positive": 0,
+          "false_negative": 0,
+          "true_negative": 9,
+          "precision": 1,
+          "recall": 1,
+          "specificity": 1,
+          "f1": 1
+        },
+        "UNKNOWN": {
+          "support": 3,
+          "true_positive": 1,
+          "false_positive": 0,
+          "false_negative": 2,
+          "true_negative": 8,
+          "precision": 1,
+          "recall": 0.333333,
+          "specificity": 1,
+          "f1": 0.5
+        }
+      },
+      "interpretation_note": "Metrics describe only the supplied manually labeled rows. They are not official evaluation results unless the labels and evaluation protocol are official."
+    }
+  },
+  "comparison": {
+    "accuracy_delta_vs_baseline": 0.181818,
+    "macro_f1_present_classes_delta_vs_baseline": 0.162698
+  },
+  "limitations": [
+    "The development CSV is a synthetic regression fixture, not the organizer's P2_inventory/inventory_dev.csv.",
+    "The labels are expected outputs for a small rule-regression fixture, not independently sampled organizer ground truth.",
+    "These metrics are smoke-test evidence only and must not be presented as official hackathon scores.",
+    "The organizer's baseline_classifier.py and evaluate.py are not present in this checkout."
+  ]
+}
