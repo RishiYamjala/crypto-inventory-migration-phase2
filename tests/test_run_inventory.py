@@ -255,3 +255,17 @@ def test_thousand_row_inventory_finishes_within_five_minutes(tmp_path):
     assert time.perf_counter() - started < 300
     validate_predictions(predictions, source)
     assert len(predictions) == 1000
+
+
+def test_cli_uses_only_python_standard_library_imports():
+    import ast
+    source = (ROOT / "run_inventory.py").read_text(encoding="utf-8")
+    tree = ast.parse(source)
+    allowed = {"argparse", "csv", "re", "sys", "pathlib", "typing", "__future__"}
+    imported = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            imported.update(alias.name.split(".")[0] for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            imported.add(node.module.split(".")[0])
+    assert imported <= allowed, f"Non-standard-library imports found: {sorted(imported - allowed)}"
