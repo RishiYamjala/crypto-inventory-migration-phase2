@@ -502,7 +502,7 @@ def _dependencies_from_evidence(
     declared = _dependency_ids(_first(row, ("depends_on",)), known_ids, aliases)
     found = declared.split(";") if declared else []
     evidence = " ".join(_first(row, (field,)) for field in ("notes", "usage", "protocol"))
-    for candidate in re.findall(r"\\b[A-Za-z][A-Za-z0-9]*-\\d{3,}\\b", evidence):
+    for candidate in re.findall(r"\b[A-Za-z][A-Za-z0-9]*-\d{3,}\b", evidence):
         resolved = aliases.get(candidate, "") or (candidate if candidate in known_ids else "")
         if resolved in known_ids and resolved not in found:
             found.append(resolved)
