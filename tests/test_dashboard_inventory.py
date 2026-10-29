@@ -49,3 +49,21 @@ def test_dashboard_download_is_exact_eight_column_csv():
 def test_dashboard_rejects_empty_or_invalid_uploads(payload):
     with pytest.raises(ValueError):
         predict_inventory_csv_bytes(payload)
+
+
+
+def test_shipped_phase2_demo_exercises_all_six_labels():
+    demo_path = __import__("pathlib").Path(__file__).resolve().parents[1] / "examples" / "phase2_inventory_demo.csv"
+    predictions = predict_inventory_csv_bytes(demo_path.read_bytes())
+    labels = {row["predicted_label"] for row in predictions}
+
+    assert labels == {
+        "QUANTUM_VULNERABLE",
+        "QUANTUM_RESISTANT",
+        "HYBRID",
+        "SYMMETRIC_OR_HASH",
+        "LEGACY_BROKEN",
+        "UNKNOWN",
+    }
+    assert len(predictions) == 9
+    assert all(list(row) == OUTPUT_COLUMNS for row in predictions)
