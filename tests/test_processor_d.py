@@ -36,3 +36,32 @@ def test_processor_d_edges_are_valid_and_unique():
         and 0 <= edge[0] < 12 and 0 <= edge[1] < 12
         for edge in edges
     )
+
+
+def test_three_processor_comparison_includes_d_and_deltas():
+    from src.metrics import compare_three_metrics
+
+    base = {
+        "success_probability": 0.5,
+        "std_error": 0.01,
+        "depth": 10,
+        "two_qubit_gates": 8,
+        "measured_swap_count": 0,
+        "swap_estimate": 1.0,
+        "physical_qubits_used": 3,
+        "total_ops": 20,
+        "runtime_seconds": 0.1,
+        "shots": 4096,
+        "seed": 42,
+        "ideal_success_probability": 0.9,
+        "baseline_two_qubit_gates": 5,
+        "extra_two_qubit_gates": 3,
+    }
+    a = {**base, "processor": "Processor A"}
+    b = {**base, "processor": "Processor B", "success_probability": 0.7}
+    d = {**base, "processor": "Processor D", "success_probability": 0.6}
+    rows = compare_three_metrics(a, b, d)
+    success_row = next(row for row in rows if row["Metric"] == "success_probability")
+    assert list(success_row) == ["Metric", "Processor A", "Processor B", "Processor D", "B - A", "D - A", "D - B"]
+    assert success_row["D - A"] == 0.1
+    assert success_row["D - B"] == -0.1

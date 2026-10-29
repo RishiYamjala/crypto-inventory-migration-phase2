@@ -44,3 +44,7 @@ The required three-qubit Grover benchmark can produce identical A/B metrics even
 
 Estimated SWAP-equivalents are extra two-qubit gates over an all-to-all baseline divided by three; this is a proxy, not a direct SWAP count. Results are simulator/compiler metrics for participant-defined models, not official hardware results or cryptographic attack estimates.
 
+
+## Supplementary Processor D benchmark
+
+The notebook additionally runs the same marked-state three-qubit Grover circuit on the participant-defined 12-qubit Processor D research model, using the same shots, seed, basis-gate policy, and assumed noise settings. This is a supplementary exploratory run; it does not replace the required A/B benchmark and is not the separate offline C/D Bell-correlation study. The notebook generates `results/tables/processor_D_metrics.csv` and `results/tables/ABD_comparison.csv`; their numeric values must come from a fresh notebook execution rather than being inferred from the processor's qubit count or graph properties.
