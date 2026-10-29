@@ -1,20 +1,15 @@
-"""Reproducible synthetic scale benchmark for the inventory planner.
-
-Reports wall time, throughput, and Python-traced peak allocations. The latter
-is not total process RSS and can undercount memory allocated by native libraries.
-"""
+"""Reproducible synthetic scale benchmark for the standard-library inventory CLI."""
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import tempfile
 import time
 import tracemalloc
 from pathlib import Path
 
-import pandas as pd
-
-from run_inventory import build_predictions, validate_predictions
+from run_inventory import build_predictions, validate_predictions, write_predictions
 
 ALGORITHMS = (
     ("RSA-2048", "key establishment"),
@@ -25,9 +20,13 @@ ALGORITHMS = (
     ("ML-DSA-65", "digital signature"),
     ("vendor-managed", "unknown"),
 )
+FIELDS = (
+    "asset_id", "algorithm", "primitive", "internet_exposed",
+    "data_retention_years", "criticality", "data_sensitivity",
+)
 
 
-def make_inventory(size: int) -> pd.DataFrame:
+def make_inventory(size: int) -> list[dict[str, str]]:
     rows = []
     for i in range(size):
         algorithm, role = ALGORITHMS[i % len(ALGORITHMS)]
@@ -36,11 +35,18 @@ def make_inventory(size: int) -> pd.DataFrame:
             "algorithm": algorithm,
             "primitive": role,
             "internet_exposed": ("yes", "no", "unknown")[i % 3],
-            "data_retention_years": (1, 5, 10, "permanent")[i % 4],
+            "data_retention_years": ("1", "5", "10", "permanent")[i % 4],
             "criticality": ("low", "medium", "high", "critical")[i % 4],
             "data_sensitivity": ("public", "internal", "confidential", "restricted")[i % 4],
         })
-    return pd.DataFrame(rows)
+    return rows
+
+
+def _write_inventory(path: Path, rows: list[dict[str, str]]) -> None:
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=FIELDS)
+        writer.writeheader()
+        writer.writerows(rows)
 
 
 def run_benchmark(sizes: list[int]) -> list[dict]:
@@ -51,7 +57,8 @@ def run_benchmark(sizes: list[int]) -> list[dict]:
         root = Path(temp)
         for size in sizes:
             input_path = root / f"inventory-{size}.csv"
-            make_inventory(size).to_csv(input_path, index=False)
+            output_path = root / f"predictions-{size}.csv"
+            _write_inventory(input_path, make_inventory(size))
             tracemalloc.start()
             started = time.perf_counter()
             predictions = build_predictions(input_path)
@@ -59,6 +66,7 @@ def run_benchmark(sizes: list[int]) -> list[dict]:
             _, peak_bytes = tracemalloc.get_traced_memory()
             tracemalloc.stop()
             validate_predictions(predictions, input_path)
+            write_predictions(output_path, predictions)
             if len(predictions) != size:
                 raise AssertionError(f"Expected {size} rows, got {len(predictions)}")
             results.append({
@@ -74,10 +82,7 @@ def run_benchmark(sizes: list[int]) -> list[dict]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--sizes", nargs="+", type=int, default=[1000, 10000, 50000],
-        help="Inventory sizes to test (default: 1000 10000 50000)",
-    )
+    parser.add_argument("--sizes", nargs="+", type=int, default=[1000, 10000, 50000])
     parser.add_argument("--output", help="Optional JSON output path")
     args = parser.parse_args()
     report = {
