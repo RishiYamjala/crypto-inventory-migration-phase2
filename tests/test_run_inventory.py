@@ -18,6 +18,9 @@ def test_algorithm_families_and_conservative_unknowns():
         "AES-256-GCM": "SYMMETRIC_OR_HASH",
         "ChaCha20-Poly1305": "SYMMETRIC_OR_HASH",
         "SHA-512": "SYMMETRIC_OR_HASH",
+        "DES": "LEGACY_BROKEN",
+        "DES-CBC": "LEGACY_BROKEN",
+        "DES-ECB": "LEGACY_BROKEN",
         "DESede": "LEGACY_BROKEN",
         "RC4": "LEGACY_BROKEN",
         "Vendor Custom Crypto": "UNKNOWN",
@@ -43,6 +46,11 @@ def test_predictions_include_required_columns_safe_unknown_and_ranks(tmp_path):
     assert output.loc[output.asset_id == "b", "migration_wave"].item() == "review"
     assert sorted(output.priority_rank) == [1, 2, 3]
     assert output.loc[output.asset_id == "a", "priority_score"].item() == 100
+    assert classify_algorithm("DES-ECB") == "LEGACY_BROKEN"
+    from run_inventory import _yes
+    assert _yes("internet-facing") is True
+    assert _yes("public-facing") is True
+    assert _yes("not internet-facing") is False
     output.to_csv(target, index=False)
     assert target.exists()
 
