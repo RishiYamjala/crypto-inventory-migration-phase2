@@ -311,7 +311,7 @@ def _score(row: pd.Series, label: str) -> int:
     alg = _norm(_first(row, ("algorithm",)))
     params = _norm(_first(row, ("key_size_or_parameter_set", "key_size")))
     if "RSA" in alg:
-        rsa_bits = re.search(r"(?<!\d)(1024|2048|3072|4096)(?!\d)", params)
+        rsa_bits = re.search(r"(?<!\\d)(512|768|1024|1536|2048|3072|4096)(?!\\d)", f"{params} {alg}")
         if rsa_bits and int(rsa_bits.group(1)) < 2048:
             score += 15
     if "AES" in alg and ("128" in alg or params == "128"):
