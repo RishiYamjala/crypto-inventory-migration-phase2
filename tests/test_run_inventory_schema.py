@@ -123,3 +123,35 @@ def test_missing_or_duplicate_asset_ids_are_rejected(tmp_path):
     pd.DataFrame([{"asset_id": "", "algorithm": "RSA"}]).to_csv(path, index=False)
     with pytest.raises(ValueError, match="nonblank"):
         build_predictions(path)
+
+
+
+def test_legacy_inventory_without_asset_id_gets_stable_ids_and_valid_dependencies(tmp_path):
+    path = tmp_path / "legacy.csv"
+    pd.DataFrame([
+        {"asset_name": "Customer Portal Certificate", "algorithm": "RSA-2048", "depends_on": "Employee VPN;not-a-real-id"},
+        {"asset_name": "Employee VPN", "algorithm": "ECDH P-256", "depends_on": ""},
+        {"asset_name": "Customer Portal Certificate", "algorithm": "AES-256", "depends_on": "Employee VPN"},
+    ]).to_csv(path, index=False)
+
+    first = build_predictions(path)
+    second = build_predictions(path)
+    validate_predictions(first, path)
+
+    assert first["asset_id"].tolist() == [
+        "customer-portal-certificate",
+        "employee-vpn",
+        "customer-portal-certificate-2",
+    ]
+    assert first["asset_id"].tolist() == second["asset_id"].tolist()
+    assert first.loc[0, "depends_on"] == "employee-vpn"
+    assert first.loc[2, "depends_on"] == "employee-vpn"
+
+
+def test_embedded_and_explicit_pqc_parameters_must_agree():
+    row = pd.Series({
+        "algorithm": "ML-KEM-768",
+        "primitive": "key_establishment",
+        "key_size_or_parameter_set": "1024",
+    })
+    assert classify_record(row) == "UNKNOWN"
