@@ -484,6 +484,18 @@ def _canonicalize_columns(frame: pd.DataFrame) -> pd.DataFrame:
         "data_sensitivity": ("data_sensitivity", "sensitivity", "data_classification", "classification"),
         "depends_on": ("depends_on", "dependencies", "dependency", "dependent_assets"),
     }
+    # Refuse multiple competing columns for one semantic field instead of
+    # silently choosing one (for example both "algorithm" and "Algorithm Name").
+    for canonical, candidates in aliases.items():
+        originals = [
+            column for column in frame.columns
+            if re.sub(r"[^a-z0-9]+", "_", str(column).strip().lower()).strip("_") in candidates
+        ]
+        if len(originals) > 1:
+            raise ValueError(
+                f"Ambiguous input schema for '{canonical}': multiple columns {originals}"
+            )
+
     rename = {}
     for canonical, candidates in aliases.items():
         if canonical in frame.columns:
