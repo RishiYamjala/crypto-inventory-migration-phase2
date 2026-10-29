@@ -275,8 +275,10 @@ def _score(row: pd.Series, label: str) -> int:
     # Weak classical key sizes are an additional concern.
     alg = _norm(_first(row, ("algorithm",)))
     params = _norm(_first(row, ("key_size_or_parameter_set", "key_size")))
-    if "RSA" in alg and params.isdigit() and int(params) < 2048:
-        score += 15
+    if "RSA" in alg:
+        rsa_bits = re.search(r"(?<!\\d)(1024|2048|3072|4096)(?!\\d)", params)
+        if rsa_bits and int(rsa_bits.group(1)) < 2048:
+            score += 15
     if "AES" in alg and ("128" in alg or params == "128"):
         score += 5
     return min(100, max(0, int(score)))
@@ -339,10 +341,17 @@ def _stable_asset_ids(source: pd.DataFrame) -> list[str]:
             slug = re.sub(r"[^a-z0-9]+", "-", _text(value).lower()).strip("-")
             bases.append(slug or f"asset-{index}")
         ids = []
+        used: set[str] = set()
         counts: dict[str, int] = {}
         for base in bases:
             counts[base] = counts.get(base, 0) + 1
-            ids.append(base if counts[base] == 1 else f"{base}-{counts[base]}")
+            candidate = base if counts[base] == 1 else f"{base}-{counts[base]}"
+            suffix = counts[base]
+            while candidate in used:
+                suffix += 1
+                candidate = f"{base}-{suffix}"
+            used.add(candidate)
+            ids.append(candidate)
     else:
         raise ValueError("Input CSV must include 'asset_id' or 'asset_name'")
 
