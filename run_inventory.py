@@ -37,7 +37,8 @@ def classify_algorithm(value) -> str:
         return "HYBRID"
     if re.search(r"(MLKEM|KYBER)(512|768|1024)?$", s) or re.search(r"(MLDSA|DILITHIUM)(44|65|87)?$", s) or "SLHDSA" in s or "SPHINCS" in s:
         return "QUANTUM_RESISTANT"
-    if any(x in s for x in ("MD5", "SHA1", "3DES", "DESEDE", "RC4")) or s == "DES" or s.startswith("DESCBC"):
+    if (any(x in s for x in ("MD5", "SHA1", "3DES", "DESEDE", "RC4"))
+            or re.fullmatch(r"DES(?:CBC|ECB|CFB|OFB|CTR|XTS)?", s)):
         return "LEGACY_BROKEN"
     if any(x in s for x in ("AES", "SHA256", "SHA384", "SHA512", "SHA3", "CHACHA20")):
         return "SYMMETRIC_OR_HASH"
@@ -77,7 +78,13 @@ def _retention_points(value) -> int:
 
 
 def _yes(value) -> bool:
-    return _text(value).lower() in {"yes", "true", "1", "internet", "internet-exposed", "external"}
+    # Inventory exports commonly use these exact exposure values. Keep this
+    # conservative: do not treat arbitrary text such as "not internet-facing"
+    # as a positive exposure signal.
+    return _text(value).lower().replace("_", "-") in {
+        "yes", "true", "1", "internet", "internet-exposed", "internet-facing",
+        "public-facing", "externally-exposed", "external",
+    }
 
 
 def _score(row, label):
