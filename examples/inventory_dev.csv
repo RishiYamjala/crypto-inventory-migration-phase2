@@ -1,0 +1,12 @@
+asset_id,asset_name,algorithm,primitive,key_size_or_parameter_set,internet_exposed,data_retention_years,criticality,depends_on
+tls-cert,Customer Portal TLS certificate,RSA-2048,digital_signature,2048,yes,10,critical,api-gateway
+api-gateway,API gateway key agreement,ECDH P-256,key_establishment,,yes,10,high,
+pqc-kem,New service key encapsulation,ML-KEM-768,key_establishment,768,no,5,high,
+hybrid-kex,Transitional service hybrid key exchange,X25519+ML-KEM-768,key_establishment,,yes,5,high,
+release-signing,Release signing key,Ed25519,digital_signature,,no,10,high,
+database,Customer database encryption,AES-256-GCM,symmetric_encryption,256,no,10,critical,
+legacy-payments,Legacy partner integration,3DES,symmetric_encryption,168,yes,1,high,
+integrity,File integrity checker,SHA-256,hash,,no,5,medium,
+unknown,Vendor-managed cryptographic service,Vendor-Managed,unknown,,unknown,,medium,
+role-conflict,Role mismatch regression example,RSA-2048,symmetric_encryption,2048,no,1,medium,
+parameter-conflict,Parameter mismatch regression example,ML-KEM-768,key_establishment,512,no,5,medium,
