@@ -54,8 +54,6 @@ ROLE_ALIASES = {
     "signing": "digital_signature",
     "authentication": "digital_signature",
     "digitalsignature": "digital_signature",
-    "keyestablishment": "key_establishment",
-    "publickeyencryption": "public_key_encryption",
     "publickeyencryption": "public_key_encryption",
     "encryption": "symmetric_encryption",
     "symmetricencryption": "symmetric_encryption",
