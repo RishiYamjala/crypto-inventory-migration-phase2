@@ -45,7 +45,7 @@ The smoke-evaluation runner computes the existing six-label metrics and compares
 
 No cryptographic primitive is implemented in the inventory classifier. The dependencies now pin `cryptography` and `pqcrypto`; `scripts/crypto_library_selftest.py` performs library-backed AES-256-GCM authenticated encryption/decryption, ML-KEM-768 shared-secret encapsulation/decapsulation, and ML-DSA-65 signature verification. This verifies that the package APIs can be exercised in the pinned environment, not that a production deployment is secure.
 
-The committed `platform_A_info.json` is a declared workflow profile because the host's exact image/hardware and the organizer's `common/env_check.py` schema were unavailable. `scripts/capture_platform_info.py` captures actual runtime details; CI saves its measured record as `platform_A_info.ci.json` in the workflow artifact.
+The committed `platform_A_info.json` records the actual GitHub Actions runner and installed pinned package versions captured during validation. It is not the submitter's personal machine or official challenge hardware, and the organizer's `common/env_check.py` schema was unavailable. `scripts/capture_platform_info.py` captures a new runtime snapshot; CI saves that as `platform_A_info.ci.json` in the workflow artifact.
 
 **Official Phase 2 evaluation remains pending.** The organizer-specific dataset, label file, `baseline_classifier.py`, `evaluate.py`, `common/env_check.py`, `common/templates/README_template.md`, and report template are still absent from this repository. The official score and exact template compliance must not be claimed until those source files are provided and used.
 ## Supplementary topology stress test
