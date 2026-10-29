@@ -100,7 +100,9 @@ Do not report unreviewed candidate counts as precision or recall. The scanner is
 
 ## Latest committed benchmark snapshot
 
-The values below are from the committed result CSVs. Runtime is environment-dependent; rerun the notebook in CI or a clean local environment before treating the numbers as a new run.
+The following A/B values match the committed Phase 1 tables. Runtime varies by environment. The required A/B comparison remains primary; Processor D is a supplementary participant-defined 12-qubit research model. Its separate metrics and the clean-run three-way comparison are linked below.
+
+### Required Processor A/B result
 
 | Metric | Processor A | Processor B | B − A |
 |---|---:|---:|---:|
@@ -114,11 +116,26 @@ The values below are from the committed result CSVs. Runtime is environment-depe
 | Total compiled operations | 120 | 96 | -24 |
 | Runtime seconds (committed snapshot) | 0.033352 | 0.014343 | -0.019009 |
 
-**Interpretation:** Processor B improved success probability and compiled operation count for this specific workload and simulator model. This is not a universal processor-superiority claim.
+**Interpretation:** Processor B improved the measured success probability and lowered compiled operation count for this workload and simulator model. This is not a universal processor-superiority claim.
+
+### Supplementary Processor D comparison
+
+| Metric | Processor A | Processor B | Processor D | B − A | D − A | D − B |
+|---|---:|---:|---:|---:|---:|---:|
+| Success probability for 101 | 0.741699 | 0.814209 | 0.741699 | 0.072510 | 0.000000 | -0.072510 |
+| Standard error | 0.006839 | 0.006077 | 0.006839 | -0.000762 | 0.000000 | 0.000762 |
+| Compiled depth | 87 | 56 | 87 | -31 | 0 | 31 |
+| Counted two-qubit gates | 48 | 24 | 48 | -24 | 0 | 24 |
+| Estimated SWAP-equivalents | 8.000 | 0.000 | 8.000 | -8.000 | 0.000 | 8.000 |
+| Measured SWAP instructions | 0 | 0 | 0 | 0 | 0 | 0 |
+| Physical qubits used | 3 | 3 | 3 | 0 | 0 | 0 |
+| Total compiled operations | 120 | 96 | 120 | -24 | 0 | 24 |
+
+In this selected three-qubit workload, D matched A's non-runtime metrics even though their coupling graphs differ. Only three physical qubits were used because the benchmark circuit itself uses three logical qubits; this does not establish that D and A are equivalent architectures. The D runtime is recorded separately in processor_D_metrics.csv because execution time varies across CI runs. The full three-way comparison from one notebook run, including same-run runtime deltas, is in ABD_comparison.csv. These are simulated results from participant-defined configurations, not official hardware measurements.
 
 ### Supplementary topology stress test
 
-These synthetic star, chain, and ring workloads complement but do not replace the required Grover benchmark.
+The star, chain, and ring compiler tests compare A and B and complement but do not replace the required Grover benchmark.
 
 | Workload | A depth | B depth | A two-qubit gates | B two-qubit gates | A estimated SWAP-equivalents | B estimated SWAP-equivalents |
 |---|---:|---:|---:|---:|---:|---:|
@@ -126,7 +143,7 @@ These synthetic star, chain, and ring workloads complement but do not replace th
 | chain | 8 | 8 | 8 | 8 | 1.000 | 1.000 |
 | ring | 17 | 9 | 19 | 10 | 4.000 | 1.000 |
 
-Estimated SWAP-equivalents are a proxy, not a direct SWAP count. See report.md and results/tables/ for the detailed report and machine-readable evidence.
+Estimated SWAP-equivalents are a proxy, not a direct SWAP count. See report.md and results/tables for details.
 
 ---
 
@@ -223,7 +240,6 @@ The JSON coupling maps are documented as **undirected physical couplings** and e
 
 - [`processor_A_graph.png`](results/figures/processor_A_graph.png)
 - [`processor_B_graph.png`](results/figures/processor_B_graph.png)
-- [`processor_D_graph.png`](results/figures/processor_D_graph.png) — supplementary synthetic D topology
 - [`logical_vs_transpiled.png`](results/figures/logical_vs_transpiled.png)
 - [`AB_performance.png`](results/figures/AB_performance.png)
 - [`architecture_tradeoffs.png`](results/figures/architecture_tradeoffs.png)
