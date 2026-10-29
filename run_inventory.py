@@ -96,7 +96,23 @@ def _first(row: pd.Series, names: tuple[str, ...] | list[str], default: str = ""
 def _role(value: Any) -> str:
     raw = _text(value).lower()
     key = re.sub(r"[^a-z0-9]", "", raw)
-    return ROLE_ALIASES.get(key, key.replace(" ", "_"))
+    aliases = {
+        **ROLE_ALIASES,
+        "keyestablishment": "key_establishment",
+        "keyencapsulation": "key_establishment",
+        "sign": "digital_signature",
+        "signaturegeneration": "digital_signature",
+        "asymmetricsignature": "digital_signature",
+        "publickeyencrypt": "public_key_encryption",
+        "symmetriccipher": "symmetric_encryption",
+        "blockcipher": "symmetric_encryption",
+        "messageauthenticationcode": "mac",
+        "keyderivation": "kdf",
+        "keyderivationfunction": "kdf",
+        "digest": "hash",
+        "hashfunction": "hash",
+    }
+    return aliases.get(key, key)
 
 
 def classify_algorithm(value: Any) -> str:
@@ -190,6 +206,21 @@ def _parameter_issue(algorithm: str, params: str) -> bool:
             return True
         if p.isdigit() and p not in {"128", "192", "256"}:
             return True
+    # Stateful hash-based signature parameter identifiers must be recognizable
+    # whenever the inventory explicitly supplies a parameter value.
+    if "LMS" in a:
+        lms_ok = re.search(r"(?:LMS)?(?:SHA256)?M32H(?:5|10|15|20|25)", p)
+        lmots_ok = re.search(r"(?:LMOTS)?(?:SHA256)?N32W(?:1|2|4|8)", p)
+        if not (lms_ok or lmots_ok or p in {"5", "10", "15", "20", "25"}):
+            return True
+    if "XMSS" in a:
+        xmss_ok = (
+            re.search(r"(?:XMSSMT?)?(?:SHA2|SHAKE)(?:10|16|20|40|60)(?:2|4|6|8)?(?:256|512)", p)
+            or re.search(r"(?:XMSSMT?)?(?:SHA256|SHA512)(?:10|16|20|40|60)", p)
+            or p in {"10", "16", "20"}
+        )
+        if not xmss_ok:
+            return True
     # RSA and classical key sizes are policy-scored rather than treated as invalid.
     return False
 
@@ -212,7 +243,7 @@ def classify_record(row: pd.Series) -> str:
     has_kdf = norm_alg.startswith(("HKDF", "PBKDF2", "SCRYPT", "ARGON2", "CONCATKDF", "SP800108"))
     has_signature = any(marker in norm_alg for marker in (
         "ECDSA", "ED25519", "ED448", "EDDSA", "MLDSA", "DILITHIUM",
-        "FNDSA", "FALCON", "SLHDSA", "SPHINCS", "RSA", "DSA"
+        "FNDSA", "FALCON", "SLHDSA", "SPHINCS", "LMS", "XMSS", "RSA", "DSA"
     )) and not any(marker in norm_alg for marker in ("OAEP", "RSAENCRYPT", "RSAES"))
     has_key_establishment = any(marker in norm_alg for marker in (
         "ECDH", "ECDHE", "X25519", "X448", "DIFFIEHELLMAN", "FFDHE", "MODP",
@@ -245,7 +276,10 @@ def classify_record(row: pd.Series) -> str:
     return label
 
 def _retention_years(row: pd.Series) -> float | None:
-    raw = _first(row, ("data_retention_years", "retention_years", "retention", "data_retention", "retention_period", "lifespan"))
+    raw = _first(row, (
+        "data_retention_years", "retention_years", "retention", "data_retention",
+        "retention_period", "lifespan", "retention_duration", "data_lifetime",
+    ))
     if not raw:
         return None
     s = raw.lower()
@@ -257,6 +291,8 @@ def _retention_years(row: pd.Series) -> float | None:
     years = max(float(x) for x in nums)
     if "month" in s:
         years /= 12
+    elif "week" in s:
+        years /= 52.1429
     elif "day" in s:
         years /= 365
     elif "year" not in s and years > 100:
@@ -266,9 +302,15 @@ def _retention_years(row: pd.Series) -> float | None:
 
 def _yes(value: Any) -> bool | None:
     s = _text(value).lower().replace("_", "-")
-    if s in {"yes", "true", "1", "internet", "internet-exposed", "internet-facing", "public-facing", "externally-exposed", "external"}:
+    if s in {
+        "yes", "true", "1", "y", "internet", "internet-exposed", "internet-facing",
+        "public-facing", "externally-exposed", "external", "exposed", "public",
+    }:
         return True
-    if s in {"no", "false", "0", "internal", "not-exposed", "not-internet-facing", "private", "not internet-facing", "not public-facing"}:
+    if s in {
+        "no", "false", "0", "n", "internal", "not-exposed", "not-internet-facing",
+        "private", "not internet-facing", "not public-facing", "unexposed",
+    }:
         return False
     return None
 
@@ -419,10 +461,40 @@ def _dependency_ids(value: Any, known_ids: set[str], source: pd.DataFrame, asset
             valid.append(resolved)
     return ";".join(valid)
 
+def _canonicalize_columns(frame: pd.DataFrame) -> pd.DataFrame:
+    """Normalize common organizer/spreadsheet header variants without overwriting data."""
+    normalized = {
+        re.sub(r"[^a-z0-9]+", "_", str(column).strip().lower()).strip("_"): column
+        for column in frame.columns
+    }
+    aliases = {
+        "asset_id": ("asset_id", "asset_identifier", "crypto_asset_id", "id"),
+        "asset_name": ("asset_name", "name", "asset", "cryptographic_asset"),
+        "algorithm": ("algorithm", "algorithm_name", "crypto_algorithm", "cryptographic_algorithm", "algorithm_used"),
+        "primitive": ("primitive", "primitive_type", "cryptographic_role", "role", "function", "use_case"),
+        "key_size_or_parameter_set": ("key_size_or_parameter_set", "parameter_set", "key_size", "key_length", "parameters", "parameter"),
+        "internet_exposed": ("internet_exposed", "internet_facing", "internet_exposure", "exposure", "publicly_accessible"),
+        "data_retention_years": ("data_retention_years", "retention_years", "data_retention", "retention", "retention_period", "retention_duration", "data_lifetime", "lifespan"),
+        "criticality": ("criticality", "business_criticality", "asset_criticality", "importance"),
+        "data_sensitivity": ("data_sensitivity", "sensitivity", "data_classification", "classification"),
+        "depends_on": ("depends_on", "dependencies", "dependency", "dependent_assets"),
+    }
+    rename = {}
+    for canonical, candidates in aliases.items():
+        if canonical in frame.columns:
+            continue
+        for candidate in candidates:
+            original = normalized.get(candidate)
+            if original is not None:
+                rename[original] = canonical
+                break
+    return frame.rename(columns=rename)
+
+
 def build_predictions(input_csv: str | Path) -> pd.DataFrame:
-    source = pd.read_csv(input_csv, dtype=object, keep_default_na=True)
+    source = _canonicalize_columns(pd.read_csv(input_csv, dtype=object, keep_default_na=True))
     if "algorithm" not in source.columns:
-        raise ValueError("Input CSV must include an 'algorithm' column")
+        raise ValueError("Input CSV must include an 'algorithm' or recognized algorithm-name column")
     asset_ids = _stable_asset_ids(source)
     known_ids = set(asset_ids)
 
@@ -495,7 +567,7 @@ def validate_predictions(df: pd.DataFrame, input_csv: str | Path | None = None) 
     if sorted(ranks.astype(int).tolist()) != list(range(1, len(df) + 1)):
         raise ValueError("priority_rank must be a contiguous ranking from 1 through row count")
     if input_csv is not None:
-        source = pd.read_csv(input_csv, dtype=object, keep_default_na=True)
+        source = _canonicalize_columns(pd.read_csv(input_csv, dtype=object, keep_default_na=True))
         if len(source) != len(df):
             raise ValueError("Output must contain exactly one prediction per input row")
         expected_ids = _stable_asset_ids(source)
