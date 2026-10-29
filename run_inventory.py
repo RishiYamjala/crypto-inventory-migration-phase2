@@ -233,7 +233,9 @@ def _parameter_issue(algorithm: Any, params: Any) -> bool:
         return True
 
     # Explicit AES key-size conflicts are invalid metadata.
-    if "AES" in a and p.isdigit() and p in {"128", "192", "256"}:
+    if "AES" in a and p.isdigit():
+        if p not in {"128", "192", "256"}:
+            return True
         embedded = re.search(r"AES(128|192|256)", a)
         if embedded and embedded.group(1) != p:
             return True
