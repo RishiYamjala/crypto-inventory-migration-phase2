@@ -1,0 +1,55 @@
+# Phase 2 Compliance Audit — PS-P2 Inventory CLI
+
+**Audit date:** 2026-10-29  
+**Repository snapshot reviewed:** `main` before this audit branch, then proposed changes on `audit/phase2-compliance-fixes`.  
+**Purpose:** distinguish code-level checks from official evaluation. This is not a claim of organizer acceptance.
+
+## Findings fixed on this branch
+
+1. **Third-party dependency in the CLI.** The previous `run_inventory.py` imported pandas, contrary to the task requirement for an offline standard-library-only CLI. It now uses `argparse`, `csv`, `re`, `pathlib`, and other Python standard-library modules only. The inventory benchmark was updated to call the same CSV-based API.
+2. **Scoring did not match the task formula.** The prior implementation used different base scores and extra sensitivity/key-size bonuses. The CLI now uses only the specified components:
+   - Base: quantum-vulnerable 40; legacy-broken 35; unknown 20; hybrid 15; quantum-resistant/symmetric-or-hash 5.
+   - Exposure: yes +25; otherwise +10.
+   - Retention: permanent or at least 10 years +20; 5–9 years +10; under 5 years or unknown +5.
+   - Criticality: critical +15; high/medium +8; low or unspecified +3.
+   - Final score is capped at 100.
+3. **Wave labels did not match the task wording.** The previous implementation emitted `1`, `2`, `3`; it now emits `Wave 1`, `Wave 2`, `Wave 3`, or `review`. Unknown records are always routed to `review`; a score of 75+ or an exposed quantum-vulnerable record is Wave 1; remaining quantum-vulnerable/legacy-broken records are Wave 2; other known categories are Wave 3.
+4. **Tests depended on DataFrame-specific output.** CLI tests now use standard-library CSV records and validate the exact output schema and order.
+5. **Processor D qubit count.** The repository's supplementary D model was previously 11 qubits. The event FAQ describes a custom 12-qubit D design, so this branch updates the participant-defined D model to 12 qubits, 14 undirected edges, no triangles, and diameter 5. Its topology/noise/ports remain synthetic assumptions; it is not an official hardware config.
+
+## Code-level checks now represented in tests
+
+- Six allowed labels and conservative unknown handling.
+- Classical public-key families: RSA, DSA, DH/FFDHE, ECC/ECDH/ECDSA, Ed25519 and X25519.
+- PQC families and hybrid classical+PQC names.
+- Role/algorithm contradictions and explicit parameter mismatches.
+- Exact scoring components, score cap, stable rank, dependency filtering, and wave strings.
+- CSV header aliases, duplicate/blank IDs, CLI execution, 1,000-row determinism, and Processor D graph/generator consistency.
+
+## Official requirements still blocked
+
+The repository tree reviewed did **not** contain:
+- `P2_inventory/inventory_dev.csv`
+- `P2_inventory/inventory_dev_labels.csv`
+- `P2_inventory/baseline_classifier.py`
+- `P2_inventory/evaluate.py`
+- `common/env_check.py`
+- `common/templates/report_template.md`
+
+Therefore this repository cannot honestly produce the official Macro-F1, `unsafe_unknown_count`, `hash_as_public_key_count`, `platform_A_info.json`, or the required final official report yet. Those artifacts must come from the organizer; sample inventory predictions and synthetic unit tests must not be presented as official metrics.
+
+The public-repository scanner can emit candidate findings and scan time, but its precision/recall remain **pending** until all candidate pairs are reviewed and missed true findings are manually added to the ground-truth file for the same repository and ref.
+
+## Scope ambiguity: Processor C/D
+
+The available **Phase 1 Master Guide V2** says Phase 1 requires only participant-defined Processors A and B, with C and custom D reserved for the offline finalist stage. The event FAQ describes a custom 12-qubit D and lists A/B/C/D among the deliverables. These sources do not fully settle what is required for this team's updated Phase 2 PS-P2 inventory task. This branch adjusts D to the 12-qubit design target but does not invent Processor C or claim that architecture deliverables satisfy the separate inventory task. Use the team's latest organizer-issued Phase 2 problem statement as the final authority.
+
+## Source references reviewed
+
+- Phase 1 Master Guide V2, available in the user's library and in `docs/`.
+- Event FAQ: https://github.com/qiskitfallfest-srmap/QisKit-Fall-Fest-2026/blob/main/public/docs/faq.md
+- Repository's `SUBMISSION_CHECKLIST.md`, `docs/PHASE1_COMPLIANCE.md`, `scripts/evaluate_public_repo.py`, `src/discovery.py`, and `run_inventory.py`.
+
+## Final status
+
+**Code-level fixes proposed; CI validation pending. Official compliance is not yet verifiable.** Merge only after the branch's workflows finish successfully and the latest organizer-provided Phase 2 materials are checked.
