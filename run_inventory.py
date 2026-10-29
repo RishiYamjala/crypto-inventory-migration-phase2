@@ -133,7 +133,7 @@ def classify_algorithm(value: Any) -> str:
         return "QUANTUM_RESISTANT"
 
     # RSA signature names such as SHA256withRSA are public-key algorithms, not standalone hashes.
-    if any(marker in s for marker in CLASSICAL_MARKERS):
+    if has_classical:
         return "QUANTUM_VULNERABLE"
 
     if (
