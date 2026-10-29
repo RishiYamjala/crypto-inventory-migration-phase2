@@ -281,11 +281,14 @@ Use this only against infrastructure and files for which you have explicit autho
 
 ## Optional dashboard
 
-The repository also includes a local Streamlit dashboard with three views:
+The repository also includes a local Streamlit dashboard with four clearly separated views:
 
-- **Overview** — total assets, migration-assessment count, Phase 1 count, HNDL flags
-- **Inventory & roadmap** — prioritized assets, role-aware risk rationale, evidence, and next step
-- **Processor A/B** — measured benchmark comparison from the CSV outputs
+- **Overview** — high-level summary of the Phase 1 sample inventory and benchmark.
+- **Phase 2 CSV planner** — upload a CSV, run the same classifier and scoring functions as `run_inventory.py`, inspect labels/waves/manual-review counts, and download the exact eight-column migration plan.
+- **Phase 1 Inventory & roadmap** — inspect the original Phase 1 risk table and its evidence; this legacy view uses the Phase 1 scoring model and is deliberately not presented as the Phase 2 CLI output.
+- **Processor A/B** — measured benchmark comparison from the CSV outputs.
+
+Uploaded rows are processed by the app environment with the repository's deterministic heuristic; the dashboard does not call an external AI service. Official classification metrics remain unverified until the official labeled dataset and evaluator are available.
 
 Launch it with:
 
