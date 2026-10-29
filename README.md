@@ -218,7 +218,7 @@ The JSON coupling maps are documented as **undirected physical couplings** and e
 - [`AB_comparison.csv`](results/tables/AB_comparison.csv) — required A/B benchmark
 - [`processor_D_metrics.csv`](results/tables/processor_D_metrics.csv) — supplementary D run
 - [`ABD_comparison.csv`](results/tables/ABD_comparison.csv) — A/B/D comparison
-- [`final_comparison.csv`](results/tables/final_comparison.csv)
+- [`final_comparison.csv`](results/tables/final_comparison.csv) — final A/B/D table
 - [`architecture_stress_test.csv`](results/tables/architecture_stress_test.csv) — supplementary topology evidence
 
 ### Figures
