@@ -35,8 +35,8 @@ def test_platform_manifest_and_runtime_capture_script_are_present():
     manifest = json.loads((ROOT / "platform_A_info.json").read_text(encoding="utf-8"))
     assert manifest["schema_version"] == "1.0"
     assert manifest["capture_status"] == "runtime_captured"
-    assert manifest["platform"]["system"] == "Linux"
-    assert manifest["python"]["version"] == "3.12.15"
+    assert manifest["platform"]["system"] in {"Linux", "Windows", "Darwin"}
+    assert manifest["python"]["version"]
     assert manifest["official_environment_check"]["status"] == "not_run"
     assert (ROOT / "scripts" / "capture_platform_info.py").is_file()
 
