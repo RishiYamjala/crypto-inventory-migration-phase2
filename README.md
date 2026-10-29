@@ -135,8 +135,8 @@ Estimated SWAP-equivalents are a proxy, not a direct SWAP count. See report.md a
 Use Python 3.11 or 3.12 in a fresh virtual environment. From Windows PowerShell:
 
 ```powershell
-git clone https://github.com/RishiYamjala/crypto-inventory-migration-planner.git
-cd crypto-inventory-migration-planner
+git clone https://github.com/RishiYamjala/crypto-inventory-migration-phase2.git
+cd crypto-inventory-migration-phase2
 py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
