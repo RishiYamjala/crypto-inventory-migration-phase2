@@ -29,7 +29,7 @@ if page == "Overview":
     - The inventory scorer explains *why* an asset is risky instead of treating every non-PQC algorithm identically.
     - The migration roadmap prioritizes by phase, risk score, and sensitivity.
     - The Qiskit benchmark is a separate architecture study: it does **not** estimate the cost of attacking real RSA/ECC keys.
-    - Processor definitions are placeholders until the official Challenge Kit values are supplied.
+    - Processor A/B are participant-defined simulator models; the figures are not calibrated hardware measurements.
     """)
     st.bar_chart(scored.groupby("phase").size().rename("assets"))
 elif page == "Phase 2 CSV planner":
