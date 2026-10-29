@@ -11,13 +11,13 @@ This checklist tracks the PS-P2 inventory CLI against the user-provided task req
 - [x] RSA, DSA, DH/FFDHE, ECC/ECDH/ECDSA, and Ed/X25519 families are covered by regression tests.
 - [x] ML-KEM, ML-DSA, SLH-DSA and supported additional PQC families are tested; classical + PQC combinations are classified as hybrid.
 - [x] Ambiguous role/parameter combinations and unrecognized/missing algorithm values route to `UNKNOWN` where detectable.
-- [x] Risk scoring follows the specified base/exposure/retention/criticality formula, caps at 100, and assigns deterministic ranks.
-- [x] Migration waves use the exact strings `Wave 1`, `Wave 2`, `Wave 3`, and `review`.
+- [x] Risk scoring explicitly uses label risk, internet exposure, data sensitivity, retention, and criticality; missing metadata gets a conservative nonzero allowance, scores are capped at 100, and ranks are deterministic.
+- [x] Migration-wave values match the official schema exactly: `1`, `2`, `3`, or `review`.
 - [x] Category-specific recommendations reference FIPS 203 ML-KEM for key establishment and FIPS 204 ML-DSA for signatures, with manual review for unknown roles.
 - [x] Tests cover CLI execution, output schema/order, classification, parameter mismatches, dependencies, scoring, wave assignment, and a 1,000-row input.
 - [x] Added a local `examples/inventory_dev.csv` smoke fixture with explicit expected labels; clearly distinguished from the organizer's missing dataset.
 - [x] Added a repeatable algorithm-only baseline comparison and local metrics generator. Outputs are marked local/synthetic, not official results.
-- [x] Added pinned `cryptography` and `pqcrypto` dependencies plus runtime smoke tests for library-backed AES-GCM, ML-KEM-768, and ML-DSA-65 operations.
+- [x] Added `cryptography==50.0.2`, `pqcrypto==1.0.0`, and `psutil>=5.9` per the supplied kit, with runtime smoke tests for library-backed AES-GCM, ML-KEM-768, and ML-DSA-65 operations.
 - [x] Added `platform_A_info.json` as a runtime-captured GitHub Actions runner snapshot plus a portable capture script. It is not the submitter's machine or official checker output.
 
 ## Blocked / not verifiable from this checkout
