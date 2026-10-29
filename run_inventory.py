@@ -246,7 +246,7 @@ def classify_record(row: pd.Series) -> str:
         "FNDSA", "FALCON", "SLHDSA", "SPHINCS", "LMS", "XMSS", "RSA", "DSA"
     )) and not any(marker in norm_alg for marker in ("OAEP", "RSAENCRYPT", "RSAES"))
     has_key_establishment = any(marker in norm_alg for marker in (
-        "ECDH", "ECDHE", "X25519", "X448", "DIFFIEHELLMAN", "FFDHE", "MODP",
+        "RSA", "ECDH", "ECDHE", "X25519", "X448", "DIFFIEHELLMAN", "FFDHE", "MODP",
         "MLKEM", "KYBER", "HQC"
     )) or re.match(r"^DH(?:\d|$)", norm_alg) is not None
 
