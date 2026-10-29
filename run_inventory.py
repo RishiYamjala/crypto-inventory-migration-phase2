@@ -118,7 +118,7 @@ def classify_algorithm(value: Any) -> str:
     has_classical = any(marker in s for marker in classical_markers)
     if not has_classical and "DSA" in s and not any(x in s for x in ("MLDSA", "FNDSA", "SLHDSA")):
         has_classical = True
-    if re.match(r"^DH(?:\\d|$)", s):
+    if re.match(r"^DH(?:\d|$)", s):
         has_classical = True
     if has_pqc and has_classical:
         return "HYBRID"
