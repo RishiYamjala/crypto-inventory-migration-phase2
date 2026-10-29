@@ -1,8 +1,8 @@
 # ⚛️ Crypto Inventory & Migration Planner
 
-> **Qiskit Fall Fest 2026 · Phase 1 · Problem Statement P2**
+> **Qiskit Fall Fest 2026 · P2 — Crypto Inventory & Migration Planner**
 >
-> Turn cryptographic inventory into a quantum-risk migration plan—and measure how the **same Grover benchmark** behaves on two processor topologies.
+> This repository preserves the Phase 1 A/B architecture experiment and adds a Phase 2 offline inventory CLI. Phase 2 classification/evaluation is not organizer-verified until the official dataset and evaluator are available.
 
 [![Qiskit](https://img.shields.io/badge/Qiskit-Phase%201-6929C4?logo=qiskit&logoColor=white)](https://www.ibm.com/quantum/qiskit) [![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/) [![Reproducible](https://img.shields.io/badge/experiment-reproducible-20B26B)](#reproducibility) [![AI disclosed](https://img.shields.io/badge/AI%20assistance-disclosed-555555)](#ai-assistance-disclosure)
 
@@ -40,7 +40,7 @@
 python run_inventory.py --input data/raw/inventory.csv --output results/tables/crypto_inventory_predictions.csv
 ```
 
-The command runs offline and writes one prediction per input row. The input CSV must include an `algorithm` column and either `asset_id` or `asset_name`; optional risk fields include `data_retention_years`, `data_sensitivity`, `internet_exposed`, and `criticality`. Missing or contradictory cryptographic metadata is routed to `UNKNOWN`/manual review rather than treated as safe. The output includes the predicted label, 0–100 priority score, rank, recommendation, migration wave, dependency IDs, and rationale.
+The command uses only Python's standard library and runs offline. It writes one prediction per input row. The input CSV must include an `algorithm` column and either `asset_id` or `asset_name`; optional risk fields include `data_retention_years`, `internet_exposed`, and `criticality`. Missing or contradictory algorithm/role/parameter evidence is routed to `UNKNOWN` where detectable rather than treated as safe. The output columns, in order, are `asset_id,predicted_label,priority_score,priority_rank,recommended_action,migration_wave,depends_on,rationale`. Migration waves are `Wave 1`, `Wave 2`, `Wave 3`, or `review`. The score uses the task-defined label base, exposure, retention, and criticality components and is capped at 100.
 
 To run the full test suite, use `python -m pytest -q`. The schema-specific tests also exercise the CLI and a 1,000-row inventory.
 
@@ -53,7 +53,7 @@ To run the full test suite, use `python -m pytest -q`. The schema-specific tests
 
 ### Supplementary Processor D model
 
-The repository also includes `processors/processor_D.json`, an **11-qubit participant-defined research model** with 13 undirected couplings, no triangles, and graph diameter 5. Its matching generator is `processors/processor_D.py`. The model uses the repository's explicitly assumed basis gates and simulator noise values so its configuration can be validated and loaded reproducibly.
+The repository also includes `processors/processor_D.json`, a **12-qubit participant-defined research model** with 14 undirected couplings, no triangles, and graph diameter 5. Its matching generator is `processors/processor_D.py`. The model uses the repository's explicitly assumed basis gates and simulator noise values so its configuration can be validated and loaded reproducibly.
 
 Processor D is marked `official_challenge_kit_verified: false`: it is a synthetic topology for exploratory simulation, not an official organizer-supplied processor or calibrated hardware. The controlled benchmark described above remains the documented A/B experiment; adding D does not silently change the existing A/B results or imply a fair three-way benchmark.
 
@@ -63,6 +63,10 @@ Validate the processor configurations with:
 python validate_processors.py
 python -m pytest -q tests/test_processor_d.py
 ```
+
+## Phase 2 compliance status
+
+The CLI's heuristic and tests are not an official score. The organizer's Phase 2 development dataset, labels, baseline/evaluator, environment checker, and report template are not present in this checkout. See [the Phase 2 compliance audit](docs/PHASE2_COMPLIANCE_AUDIT.md). Do not report official Macro-F1 or evaluator metrics until those materials are supplied and the required evaluation is run.
 
 ## PS-P2 scanner evaluation
 

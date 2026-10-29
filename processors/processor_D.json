@@ -1,6 +1,6 @@
 {
   "name": "Processor D",
-  "num_qubits": 11,
+  "num_qubits": 12,
   "coupling_map": [
     [
       0,
@@ -53,6 +53,10 @@
     [
       7,
       10
+    ],
+    [
+      10,
+      11
     ]
   ],
   "basis_gates": [
@@ -70,13 +74,13 @@
     "cx_depolarizing": 0.005,
     "readout_error": 0.01
   },
-  "topology_description": "Eleven-qubit sparse ladder/chord research architecture with 13 undirected edges, no triangles, and graph diameter 5. Three long-range chords shorten selected routes while retaining sparse connectivity.",
-  "stage": "Supplementary participant-defined research model D",
+  "topology_description": "Twelve-qubit sparse chain-with-chords research architecture with 14 undirected edges, no triangles, and graph diameter 5. Three long-range chords shorten selected routes while retaining sparse connectivity.",
+  "stage": "Supplementary participant-defined research model D (12-qubit design target)",
   "source": "Participant-designed topology for exploratory simulation; not an organizer-issued processor configuration",
   "official_challenge_kit_verified": false,
   "note": "Synthetic research model only. Qubit count, coupling map, ports, and noise values are explicit assumptions for reproducible simulation; they are not official hardware specifications or calibrated measurements.",
   "graph_properties": {
-    "undirected_edge_count": 13,
+    "undirected_edge_count": 14,
     "triangle_count": 0,
     "diameter": 5
   }

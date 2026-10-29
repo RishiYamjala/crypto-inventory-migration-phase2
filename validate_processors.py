@@ -12,7 +12,7 @@ ROOT = Path(__file__).parent
 PROCESSORS = {
     "Processor A": (ROOT / "processors" / "processor_A.json", 5),
     "Processor B": (ROOT / "processors" / "processor_B.json", 9),
-    "Processor D": (ROOT / "processors" / "processor_D.json", 11),
+    "Processor D": (ROOT / "processors" / "processor_D.json", 12),
 }
 EXPECTED_BASIS = ["rz", "sx", "x", "cx"]
 EXPECTED_NOISE = {
