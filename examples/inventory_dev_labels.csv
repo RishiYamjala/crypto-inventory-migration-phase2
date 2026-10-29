@@ -1,0 +1,12 @@
+asset_id,true_label
+tls-cert,QUANTUM_VULNERABLE
+api-gateway,QUANTUM_VULNERABLE
+pqc-kem,QUANTUM_RESISTANT
+hybrid-kex,HYBRID
+release-signing,QUANTUM_VULNERABLE
+database,SYMMETRIC_OR_HASH
+legacy-payments,LEGACY_BROKEN
+integrity,SYMMETRIC_OR_HASH
+unknown,UNKNOWN
+role-conflict,UNKNOWN
+parameter-conflict,UNKNOWN

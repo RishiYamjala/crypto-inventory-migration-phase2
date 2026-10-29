@@ -37,6 +37,18 @@ jobs:
       - name: Run automated tests
         run: python -m pytest -q
 
+      - name: Capture runtime platform information
+        run: python scripts/capture_platform_info.py --output platform_A_info.ci.json
+
+      - name: Exercise vetted cryptography libraries
+        run: python scripts/crypto_library_selftest.py --output results/crypto_library_selftest.json
+
+      - name: Verify offline inventory CLI execution on local development fixture
+        run: python run_inventory.py --input examples/inventory_dev.csv --output results/tables/inventory_dev_predictions.csv
+
+      - name: Evaluate local inventory smoke fixture against algorithm-only baseline
+        run: python scripts/run_phase2_smoke_evaluation.py
+
       - name: Validate participant-defined processor models
         run: python validate_processors.py
 
@@ -59,6 +71,9 @@ jobs:
           path: |
             executed_main.ipynb
             report.md
+            platform_A_info.ci.json
+            results/inventory_eval_metrics.json
+            results/crypto_library_selftest.json
             results/tables/
             results/figures/
           if-no-files-found: warn

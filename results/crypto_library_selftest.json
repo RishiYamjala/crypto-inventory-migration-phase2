@@ -1,0 +1,14 @@
+{
+  "library_versions": {
+    "cryptography": "50.0.2",
+    "pqcrypto": "0.4.0"
+  },
+  "primitives_implemented_in_project": false,
+  "scope": "library API smoke test only; not a security certification or production key-management design",
+  "status": "passed",
+  "tests": {
+    "aes_256_gcm_authenticated_encryption_round_trip": true,
+    "ml_dsa_65_signature_verification": true,
+    "ml_kem_768_shared_secret_round_trip": true
+  }
+}
