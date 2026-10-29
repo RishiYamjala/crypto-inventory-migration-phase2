@@ -109,7 +109,12 @@ def classify_algorithm(value: Any) -> str:
 
     # Hybrid must be checked before either component family.
     has_pqc = any(marker in s for marker in PQC_MARKERS)
-    has_classical = any(marker in s for marker in CLASSICAL_MARKERS)
+    # DSA is a substring of ML-DSA, FN-DSA, and SLH-DSA; do not mistake
+    # those post-quantum names for a classical component.
+    classical_markers = tuple(m for m in CLASSICAL_MARKERS if m != "DSA")
+    has_classical = any(marker in s for marker in classical_markers)
+    if not has_classical and "DSA" in s and not any(x in s for x in ("MLDSA", "FNDSA", "SLHDSA")):
+        has_classical = True
     if has_pqc and has_classical:
         return "HYBRID"
     if "HYBRID" in s and has_pqc:
