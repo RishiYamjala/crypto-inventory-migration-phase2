@@ -14,7 +14,8 @@ PATTERNS = {
     "RSA-2048": re.compile(r"\bRSA[- ]?2048\b|\bdefault_bits\s*=\s*2048\b|\bopenssl\s+genrsa\b[^\n]*\b2048\b", re.I),
     "RSA-3072": re.compile(r"\bRSA[- ]?3072\b|\bopenssl\s+genrsa\b[^\n]*\b3072\b", re.I),
     # Explicit key-size declarations are common in inventories and configuration files.
-    # Keep 2048/3072 as dedicated labels, while catching other RSA sizes generically.\n    "RSA": re.compile(r"\bRSA[- ]?(?:1024|1536|2048|3072|4096|6144|7680|8192)\b|\brsa\.generate_private_key\b|\bopenssl\s+(?:genrsa|rsa)\b|\bRSAPrivateKey\b|\bRSAPublicKey\b|\brsa\.new\s*\(", re.I),
+    # Keep 2048/3072 as dedicated labels, while catching other RSA sizes generically.
+    "RSA": re.compile(r"\bRSA[- ]?(?:1024|1536|2048|3072|4096|6144|7680|8192)\b|\brsa\.generate_private_key\b|\bopenssl\s+(?:genrsa|rsa)\b|\bRSAPrivateKey\b|\bRSAPublicKey\b|\brsa\.new\s*\(", re.I),
     "DSA": re.compile(r"\bdsa\.generate_private_key\b|\bDSA(?:ParameterNumbers|PrivateKey|PublicKey)\b|\bopenssl\s+(?:dsaparam|gendsa)\b|(?<!ML-)\bDSA\b", re.I),
     # DH key-size inventory declarations should be visible even without code APIs.
     "DH": re.compile(r"\bDH[- ]?(?:1024|1536|2048|3072|4096|6144|8192)\b|\bdh\.generate_parameters\b|\bDHParameterNumbers\b|\bDiffie[- ]Hellman\b|\bopenssl\s+dhparam\b|\bDH(?:PrivateKey|PublicKey)\b|\bX9\.42\b", re.I),
