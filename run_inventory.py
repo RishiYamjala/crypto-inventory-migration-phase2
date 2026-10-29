@@ -39,10 +39,10 @@ CLASSICAL_MARKERS = (
     "X25519", "X448", "FFDHE", "MODP", "SECP", "P256", "P384", "P521",
     "DIFFIEHELLMAN", "DSA",
 )
-LEGACY_MARKERS = ("MD5", "SHA1", "3DES", "TDEA", "DESEDE", "RC4", "RC2")
+LEGACY_MARKERS = ("MD2", "MD4", "MD5", "SHA1", "3DES", "TDEA", "DESEDE", "RC4", "RC2")
 HASH_MARKERS = (
-    "SHA256", "SHA384", "SHA512", "SHA3224", "SHA3256", "SHA3384",
-    "SHA3512", "SHAKE128", "SHAKE256", "BLAKE2", "BLAKE3",
+    "SHA224", "SHA256", "SHA384", "SHA512", "SHA3224", "SHA3256", "SHA3384",
+    "SHA3512", "SHAKE128", "SHAKE256", "BLAKE2", "BLAKE3", "SM3", "WHIRLPOOL",
 )
 ROLE_ALIASES = {
     "keyestablishment": "key_establishment",
@@ -152,20 +152,22 @@ def _parameter_issue(algorithm: str, params: str) -> bool:
     if not p:
         return False  # Missing metadata is uncertainty, not proof of invalidity.
 
-    # Detect disagreement between a parameter embedded in the algorithm name and
-    # a separately supplied parameter-set column.
-    embedded = None
-    for pattern in (r"(?:MLKEM|KYBER)(512|768|1024)", r"MLDSA(44|65|87)"):
+    # Embedded standardized parameter identifiers must agree with the inventory field.
+    embedded_patterns = (
+        (r"(?:MLKEM|KYBER)(512|768|1024)", {"512", "768", "1024"}),
+        (r"MLDSA(44|65|87)", {"44", "65", "87"}),
+        (r"(?:FNDSA|FALCON)(512|1024)", {"512", "1024"}),
+        (r"HQC(128|192|256)", {"128", "192", "256"}),
+    )
+    for pattern, allowed_digits in embedded_patterns:
         match = re.search(pattern, a)
         if match:
-            embedded = match.group(1)
-            break
-    if embedded:
-        supplied_digits = re.search(r"(512|768|1024|44|65|87)", p)
-        if supplied_digits and supplied_digits.group(1) != embedded:
-            return True
+            supplied = re.search(r"(512|768|1024|44|65|87|128|192|256)", p)
+            if supplied and supplied.group(1) not in allowed_digits:
+                return True
+            if supplied and supplied.group(1) != match.group(1):
+                return True
 
-    # Recognized standardized parameter-set identifiers.
     checks = (
         (("MLKEM", "KYBER"), {"512", "768", "1024", "MLKEM512", "MLKEM768", "MLKEM1024", "KYBER512", "KYBER768", "KYBER1024"}),
         (("MLDSA", "DILITHIUM"), {"44", "65", "87", "MLDSA44", "MLDSA65", "MLDSA87", "DILITHIUM2", "DILITHIUM3", "DILITHIUM5"}),
@@ -173,20 +175,26 @@ def _parameter_issue(algorithm: str, params: str) -> bool:
             "SHA2128S", "SHA2128F", "SHA2192S", "SHA2192F", "SHA2256S", "SHA2256F",
             "SHAKE128S", "SHAKE128F", "SHAKE192S", "SHAKE192F", "SHAKE256S", "SHAKE256F",
         }),
+        (("FNDSA", "FALCON"), {"512", "1024", "FNDSA512", "FNDSA1024", "FALCON512", "FALCON1024"}),
+        (("HQC",), {"128", "192", "256", "HQC128", "HQC192", "HQC256"}),
     )
     for markers, allowed in checks:
-        if any(m in a for m in markers):
-            return p not in allowed and not any(p.endswith(x) for x in allowed)
+        if any(marker in a for marker in markers):
+            canonical = re.sub(r"BITS?$", "", p)
+            if canonical not in allowed and not any(canonical.endswith(item) for item in allowed):
+                return True
 
-    if "AES" in a and p.isdigit():
-        return p not in {"128", "192", "256"}
-    # RSA and classical key sizes are not restricted to a single valid size here;
-    # policy-strength assessment belongs in the risk/action layer.
+    if "AES" in a:
+        bits = re.search(r"(128|192|256)", p)
+        if bits and bits.group(1) not in {"128", "192", "256"}:
+            return True
+        if p.isdigit() and p not in {"128", "192", "256"}:
+            return True
+    # RSA and classical key sizes are policy-scored rather than treated as invalid.
     return False
 
-
 def classify_record(row: pd.Series) -> str:
-    """Classify using algorithm, primitive/role, and explicit parameter consistency."""
+    """Classify using algorithm, role, and explicit parameter consistency."""
     algorithm = _first(row, ("algorithm",))
     primitive = _role(_first(row, ("primitive", "cryptographic_role", "role")))
     params = _first(row, ("key_size_or_parameter_set", "parameter_set", "key_size"))
@@ -195,22 +203,46 @@ def classify_record(row: pd.Series) -> str:
     if label == "UNKNOWN" or _parameter_issue(algorithm, params):
         return "UNKNOWN"
 
-    # A declared role inconsistent with the algorithm family is not guessed around.
+    norm_alg = _norm(algorithm)
+    has_hash = any(marker in norm_alg for marker in HASH_MARKERS) or norm_alg.startswith(("MD2", "MD4", "MD5"))
+    has_symmetric_cipher = any(marker in norm_alg for marker in (
+        "AES", "CHACHA20", "SM4", "DES", "TDEA", "DESEDE", "RC2", "RC4"
+    ))
+    has_mac = any(marker in norm_alg for marker in ("HMAC", "CMAC", "GMAC", "POLY1305", "KMAC"))
+    has_kdf = norm_alg.startswith(("HKDF", "PBKDF2", "SCRYPT", "ARGON2", "CONCATKDF", "SP800108"))
+    has_signature = any(marker in norm_alg for marker in (
+        "ECDSA", "ED25519", "ED448", "EDDSA", "MLDSA", "DILITHIUM",
+        "FNDSA", "FALCON", "SLHDSA", "SPHINCS", "RSA", "DSA"
+    )) and not any(marker in norm_alg for marker in ("OAEP", "RSAENCRYPT", "RSAES"))
+    has_key_establishment = any(marker in norm_alg for marker in (
+        "ECDH", "ECDHE", "X25519", "X448", "DIFFIEHELLMAN", "FFDHE", "MODP",
+        "MLKEM", "KYBER", "HQC"
+    )) or re.match(r"^DH(?:\d|$)", norm_alg) is not None
+
     if primitive in PUBLIC_KEY_ROLES and label in {"SYMMETRIC_OR_HASH", "LEGACY_BROKEN"}:
         return "UNKNOWN"
     if primitive in NON_PUBLIC_KEY_ROLES and label in {
         "QUANTUM_VULNERABLE", "QUANTUM_RESISTANT", "HYBRID"
     }:
         return "UNKNOWN"
-
-    # A bare SHA-256/other hash cannot serve as a digital-signature algorithm.
-    norm_alg = _norm(algorithm)
-    if primitive == "digital_signature" and any(m in norm_alg for m in HASH_MARKERS):
-        if not any(m in norm_alg for m in ("RSA", "ECDSA", "DSA", "MLDSA", "DILITHIUM", "FNDSA", "FALCON")):
-            return "UNKNOWN"
+    if primitive == "digital_signature" and not has_signature:
+        return "UNKNOWN"
+    if primitive == "key_establishment" and not has_key_establishment:
+        return "UNKNOWN"
+    if primitive == "public_key_encryption" and not any(
+        marker in norm_alg for marker in ("RSA", "ELGAMAL", "PAILLIER", "MLKEM", "KYBER")
+    ):
+        return "UNKNOWN"
+    if primitive == "symmetric_encryption" and not has_symmetric_cipher:
+        return "UNKNOWN"
+    if primitive == "hash" and (not has_hash or has_symmetric_cipher):
+        return "UNKNOWN"
+    if primitive == "mac" and not has_mac:
+        return "UNKNOWN"
+    if primitive == "kdf" and not has_kdf:
+        return "UNKNOWN"
 
     return label
-
 
 def _retention_years(row: pd.Series) -> float | None:
     raw = _first(row, ("data_retention_years", "retention_years", "retention", "data_retention", "retention_period", "lifespan"))
@@ -364,16 +396,20 @@ def _stable_asset_ids(source: pd.DataFrame) -> list[str]:
 
 
 def _dependency_ids(value: Any, known_ids: set[str], source: pd.DataFrame, asset_ids: list[str]) -> str:
-    """Resolve dependency references to known asset IDs; discard unresolved text."""
+    """Resolve dependency references to known IDs; discard unresolved or ambiguous names."""
     raw = _text(value)
     if not raw:
         return ""
     aliases: dict[str, str] = {asset_id: asset_id for asset_id in asset_ids}
     if "asset_name" in source.columns:
-        for index, name in enumerate(source["asset_name"].tolist()):
-            normalized_name = _text(name)
-            if normalized_name and normalized_name not in aliases:
-                aliases[normalized_name] = asset_ids[index]
+        names = [_text(value) for value in source["asset_name"].tolist()]
+        counts: dict[str, int] = {}
+        for name in names:
+            if name:
+                counts[name] = counts.get(name, 0) + 1
+        for index, name in enumerate(names):
+            if name and counts[name] == 1 and name not in aliases:
+                aliases[name] = asset_ids[index]
     parts = re.split(r"[;,|]", raw)
     valid = []
     for part in parts:
@@ -382,7 +418,6 @@ def _dependency_ids(value: Any, known_ids: set[str], source: pd.DataFrame, asset
         if resolved and resolved in known_ids and resolved not in valid:
             valid.append(resolved)
     return ";".join(valid)
-
 
 def build_predictions(input_csv: str | Path) -> pd.DataFrame:
     source = pd.read_csv(input_csv, dtype=object, keep_default_na=True)
