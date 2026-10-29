@@ -28,7 +28,7 @@
 
 ### Part A — Crypto inventory → migration plan
 
-- Ten-row Phase 1 sample inventory in `data/raw/inventory.csv` and a dedicated eight-row Phase 2 demo in `examples/phase2_inventory_demo.csv`
+- Ten-row Phase 1 sample inventory in `data/raw/inventory.csv` and a dedicated nine-row Phase 2 demo in `examples/phase2_inventory_demo.csv`
 - Auditable vulnerability, sensitivity, lifespan, and risk scoring tables
 - HNDL detection for long-lived public-key assets in exposed usages
 - NIST-aligned recommendations using ML-KEM, ML-DSA, SLH-DSA, AES-256, AES-256-GCM, SHA-256, and SHA-3
@@ -167,6 +167,8 @@ The artifact checklist checks files and basic expected fields; it does not certi
 
 ```text
 ├── README.md                         ← this showcase
+├── run_inventory.py                  ← Phase 2 standard-library inventory CLI
+├── examples/phase2_inventory_demo.csv ← nine-row fixture covering all six labels
 ├── main.ipynb                        ← end-to-end experiment
 ├── requirements.txt                  ← environment specification
 ├── report.md                         ← measured analysis + limitations
@@ -176,7 +178,8 @@ The artifact checklist checks files and basic expected fields; it does not certi
 ├── processors/processor_B.py         ← reproducible nine-qubit model generator
 ├── processors/processor_A.json       ← generated five-qubit branching model
 ├── processors/processor_B.json       ← generated nine-qubit heavy-hex-inspired model
-├── src/problem.py                    ← scoring + migration logic
+├── src/problem.py                    ← Phase 1 scoring + migration logic
+├── src/dashboard_inventory.py        ← Phase 2 dashboard upload/export adapter
 ├── src/processors.py                 ← JSON loading + noise model
 ├── src/routing.py                    ← Grover + transpilation
 ├── src/metrics.py                    ← A/B metrics
