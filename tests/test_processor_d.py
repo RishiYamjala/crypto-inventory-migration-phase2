@@ -65,3 +65,24 @@ def test_three_processor_comparison_includes_d_and_deltas():
     assert list(success_row) == ["Metric", "Processor A", "Processor B", "Processor D", "B - A", "D - A", "D - B"]
     assert abs(success_row["D - A"] - 0.1) < 1e-12
     assert abs(success_row["D - B"] + 0.1) < 1e-12
+
+
+def test_processor_d_metric_snapshot_and_three_way_comparison_are_committed():
+    import csv
+
+    with (ROOT / "results" / "tables" / "processor_D_metrics.csv").open(
+        newline="", encoding="utf-8"
+    ) as stream:
+        d_rows = list(csv.DictReader(stream))
+    assert len(d_rows) == 1
+    assert d_rows[0]["processor"] == "Processor D"
+    assert int(d_rows[0]["shots"]) == 4096
+    assert int(d_rows[0]["seed"]) == 42
+
+    with (ROOT / "results" / "tables" / "ABD_comparison.csv").open(
+        newline="", encoding="utf-8"
+    ) as stream:
+        comparison = {row["Metric"]: row for row in csv.DictReader(stream)}
+    assert comparison["success_probability"]["Processor D"] == "0.74169921875"
+    assert comparison["depth"]["Processor D"] == "87.0"
+    assert comparison["two_qubit_gates"]["Processor D"] == "48.0"
