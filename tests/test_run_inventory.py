@@ -31,6 +31,8 @@ def row_by_id(rows, asset_id):
     ("algorithm", "expected"),
     [
         ("RSA-4096", "QUANTUM_VULNERABLE"), ("DSA-2048", "QUANTUM_VULNERABLE"),
+        ("RS256", "QUANTUM_VULNERABLE"), ("ES256", "QUANTUM_VULNERABLE"),
+        ("Curve25519", "QUANTUM_VULNERABLE"), ("RSASHA256", "QUANTUM_VULNERABLE"),
         ("DH-2048", "QUANTUM_VULNERABLE"), ("DH2048", "QUANTUM_VULNERABLE"),
         ("ECDSA P-521", "QUANTUM_VULNERABLE"), ("ffdhe2048", "QUANTUM_VULNERABLE"),
         ("X25519", "QUANTUM_VULNERABLE"), ("Ed25519", "QUANTUM_VULNERABLE"),
@@ -46,7 +48,7 @@ def row_by_id(rows, asset_id):
         ("DES", "LEGACY_BROKEN"), ("DES-CBC", "LEGACY_BROKEN"),
         ("DESede", "LEGACY_BROKEN"), ("RC4", "LEGACY_BROKEN"),
         ("Vendor Custom Crypto", "UNKNOWN"), ("", "UNKNOWN"), (None, "UNKNOWN"),
-        ("ML-KEM", "UNKNOWN"), ("ML-DSA", "UNKNOWN"),
+        ("ML-KEM", "QUANTUM_RESISTANT"), ("ML-DSA", "QUANTUM_RESISTANT"),
     ],
 )
 def test_algorithm_families_and_conservative_unknowns(algorithm, expected):
@@ -133,11 +135,11 @@ def test_exact_score_formula_and_waves(tmp_path):
     ])
     output = build_predictions(source)
     assert [row["asset_id"] for row in output] == ["edge", "db", "unknown", "legacy", "internal-rsa"]
-    assert [row["migration_wave"] for row in output] == ["Wave 1", "Wave 3", "review", "Wave 2", "Wave 2"]
+    assert [row["migration_wave"] for row in output] == ["1", "3", "review", "2", "2"]
     assert row_by_id(output, "edge")["priority_score"] == 100
-    assert row_by_id(output, "legacy")["priority_score"] == 53
-    assert row_by_id(output, "unknown")["priority_score"] == 38
-    assert row_by_id(output, "internal-rsa")["priority_score"] == 68
+    assert row_by_id(output, "legacy")["priority_score"] == 87
+    assert row_by_id(output, "unknown")["priority_score"] == 72
+    assert row_by_id(output, "internal-rsa")["priority_score"] == 78
     assert row_by_id(output, "edge")["depends_on"] == "db"
     assert sorted(row["priority_rank"] for row in output) == [1, 2, 3, 4, 5]
     assert all(row["recommended_action"].strip() and row["rationale"].strip() for row in output)
@@ -148,8 +150,9 @@ def test_score_uses_only_requested_components():
     row = {"internet_exposed": "yes", "data_retention_years": "10", "criticality": "critical",
            "data_sensitivity": "public"}
     assert _score(row, "QUANTUM_VULNERABLE") == 100
-    assert _score(row, "LEGACY_BROKEN") == 95
-    assert _score(row, "UNKNOWN") == 80
+    assert _score(row, "LEGACY_BROKEN") == 98
+    assert _score(row, "UNKNOWN") == 83
+    assert _score(dict(row, data_sensitivity="restricted"), "UNKNOWN") > _score(row, "UNKNOWN")
 
 
 def test_common_spreadsheet_header_aliases_and_stable_ids(tmp_path):
@@ -161,7 +164,7 @@ def test_common_spreadsheet_header_aliases_and_stable_ids(tmp_path):
     output = build_predictions(source)
     assert output[0]["asset_id"] == "public-api"
     assert output[0]["predicted_label"] == "QUANTUM_VULNERABLE"
-    assert output[0]["priority_score"] == 78
+    assert output[0]["priority_score"] == 92
     validate_predictions(output, source)
 
 
@@ -180,7 +183,7 @@ def test_duplicate_or_blank_asset_ids_are_rejected(tmp_path):
 def test_validator_rejects_bad_wave_rank_and_missing_columns(tmp_path):
     source = write_csv(tmp_path / "input.csv", [{"asset_id": "a", "algorithm": "RSA-2048"}])
     output = build_predictions(source)
-    bad_wave = [dict(output[0], migration_wave="1")]
+    bad_wave = [dict(output[0], migration_wave="Wave 1")]
     with pytest.raises(ValueError, match="migration_wave"):
         validate_predictions(bad_wave)
     bad_rank = [dict(output[0], priority_rank=0)]
