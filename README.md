@@ -34,6 +34,16 @@
 - NIST-aligned recommendations using ML-KEM, ML-DSA, SLH-DSA, AES-256, AES-256-GCM, SHA-256, and SHA-3
 - Phase-based migration prioritization
 
+#### Run the schema-driven inventory classifier
+
+```bash
+python run_inventory.py --input data/raw/inventory.csv --output results/tables/crypto_inventory_predictions.csv
+```
+
+The command runs offline and writes one prediction per input row. The input CSV must include an `algorithm` column and either `asset_id` or `asset_name`; optional risk fields include `data_retention_years`, `data_sensitivity`, `internet_exposed`, and `criticality`. Missing or contradictory cryptographic metadata is routed to `UNKNOWN`/manual review rather than treated as safe. The output includes the predicted label, 0–100 priority score, rank, recommendation, migration wave, dependency IDs, and rationale.
+
+To run the full test suite, use `python -m pytest -q`. The schema-specific tests also exercise the CLI and a 1,000-row inventory.
+
 ### Part B — Controlled A/B benchmark
 
 - Three-qubit Grover search for marked state `101`
@@ -329,3 +339,16 @@ python -m src.architecture_stress
 This runs star, chain, and ring interaction patterns against both processor models and writes `results/tables/architecture_stress_test.csv`. It reports compiled depth, two-qubit gates, baseline/extra two-qubit gates, explicit SWAP instructions, an estimated SWAP-equivalent count, physical qubits used, and the transpiler seed. The estimated SWAP-equivalent metric is not a direct SWAP count.
 
 These are supplementary simulator/compiler experiments using participant-defined research models. They do not replace the required benchmark, verify official processor authenticity, measure real hardware, or estimate the cost of attacking RSA/ECC. The generated table should be inspected alongside the CI run before submission.
+
+
+### Evaluation and scale-testing tools
+
+The Phase 2 inventory planner now includes separate tooling for reviewed-label evaluation and synthetic scale benchmarking:
+
+- Standards mapping and known parameter-validation limits: [docs/ALGORITHM_PARAMETER_AUDIT.md](docs/ALGORITHM_PARAMETER_AUDIT.md)
+- Labeled quality metrics (requires a manually reviewed CSV with `asset_id,true_label`):
+  `python scripts/evaluate_inventory.py --ground-truth data/raw/ground_truth.csv --predictions results/tables/crypto_inventory_predictions.csv --output results/inventory_metrics.json`
+- Larger synthetic inventory benchmark (performance only; not a quality score):
+  `python scripts/benchmark_inventory.py --sizes 1000 10000 50000 --output results/inventory_scale_benchmark.json`
+
+Do not interpret synthetic benchmark records as ground truth. Precision, recall, false positives, and false negatives are meaningful only when evaluated against a reviewed, labeled dataset. Official submission compliance remains unconfirmed until the organizer's exact schema, labeled dataset, and evaluator are supplied and run.
