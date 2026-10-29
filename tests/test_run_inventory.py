@@ -244,3 +244,39 @@ def test_large_inventory_is_deterministic_and_complete(tmp_path):
     assert len(first) == 1000
     assert first.equals(second)
     validate_predictions(first, source)
+
+
+
+def test_parameter_validation_rejects_suffix_lookalikes_and_conflicts():
+    assert _parameter_issue("ML-KEM-768", "untrusted-768") is True
+    assert _parameter_issue("ML-KEM-768", "ML-KEM-768") is False
+    assert _parameter_issue("AES-256-GCM", "128") is True
+    assert _parameter_issue("AES-256-GCM", "256") is False
+
+
+def test_algorithm_substring_does_not_create_false_pqc_match():
+    assert classify_algorithm("FILMS") == "UNKNOWN"
+    assert classify_algorithm("XMSS-SHA2_10_256") == "QUANTUM_RESISTANT"
+    assert classify_algorithm("X25519+ML-KEM-768") == "HYBRID"
+
+
+def test_conflicting_alias_columns_are_rejected(tmp_path):
+    source = tmp_path / "conflicting-columns.csv"
+    pd.DataFrame([{
+        "asset_id": "a",
+        "algorithm": "RSA-2048",
+        "Algorithm Name": "ML-KEM-768",
+    }]).to_csv(source, index=False)
+    with pytest.raises(ValueError, match="Ambiguous input schema"):
+        build_predictions(source)
+
+
+def test_csv_values_with_commas_and_semicolons_are_not_used_as_algorithm_aliases(tmp_path):
+    source = tmp_path / "punctuation.csv"
+    pd.DataFrame([
+        {"asset_id": "a", "algorithm": "RSA-2048", "depends_on": "b;missing,not-an-id"},
+        {"asset_id": "b", "algorithm": "ML-KEM-768"},
+    ]).to_csv(source, index=False)
+    result = build_predictions(source)
+    validate_predictions(result, source)
+    assert result.loc[result.asset_id == "a", "depends_on"].item() == "b"
