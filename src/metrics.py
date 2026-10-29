@@ -138,3 +138,39 @@ def compare_metrics(a, b):
             }
         )
     return rows
+
+
+
+def compare_three_metrics(a, b, d):
+    """Compare the required A/B results with supplementary Processor D metrics."""
+    fields = [
+        "success_probability",
+        "std_error",
+        "depth",
+        "two_qubit_gates",
+        "measured_swap_count",
+        "swap_estimate",
+        "physical_qubits_used",
+        "total_ops",
+        "runtime_seconds",
+        "shots",
+        "seed",
+        "ideal_success_probability",
+        "baseline_two_qubit_gates",
+        "extra_two_qubit_gates",
+    ]
+    rows = []
+    for field in fields:
+        a_value, b_value, d_value = a[field], b[field], d[field]
+        rows.append(
+            {
+                "Metric": field,
+                "Processor A": a_value,
+                "Processor B": b_value,
+                "Processor D": d_value,
+                "B - A": b_value - a_value,
+                "D - A": d_value - a_value,
+                "D - B": d_value - b_value,
+            }
+        )
+    return rows

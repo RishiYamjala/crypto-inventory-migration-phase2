@@ -27,3 +27,17 @@ def test_metrics_return_none_when_denominator_is_zero():
     result = calculate_metrics(set(), {})
     assert result["precision"] is None
     assert result["recall"] is None
+
+def test_tracked_ground_truth_template_matches_evaluator_contract():
+    import csv
+    from pathlib import Path
+
+    from scripts.evaluate_public_repo import GROUND_TRUTH_COLUMNS
+
+    template = Path(__file__).resolve().parents[1] / "data" / "raw" / "psp2_ground_truth_template.csv"
+    with template.open(newline="", encoding="utf-8") as handle:
+        header = next(csv.reader(handle))
+
+    assert header == ["repository", "ref", "path", "algorithm", "is_present", "reviewed"]
+    assert set(header) == GROUND_TRUTH_COLUMNS
+

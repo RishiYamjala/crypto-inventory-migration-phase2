@@ -53,7 +53,7 @@ To run the full test suite, use `python -m pytest -q`. The schema-specific tests
 
 ### Supplementary Processor D model
 
-The repository also includes `processors/processor_D.json`, a **12-qubit participant-defined research model** with 14 undirected couplings, no triangles, and graph diameter 5. Its matching generator is `processors/processor_D.py`. The model uses the repository's explicitly assumed basis gates and simulator noise values so its configuration can be validated and loaded reproducibly.
+The repository also includes `processors/processor_D.json`, a **12-qubit participant-defined research model** with 14 undirected couplings, no triangles, and graph diameter 5. Its matching generator is `processors/processor_D.py`. The notebook runs the same three-qubit Grover workload on D under the shared simulator settings, writes `results/tables/processor_D_metrics.csv`, and creates the supplementary three-way `results/tables/ABD_comparison.csv`. The required A/B comparison remains the primary Phase 1 result. The model uses assumed basis gates and simulator noise values; it is not official hardware.
 
 Processor D is marked `official_challenge_kit_verified: false`: it is a synthetic topology for exploratory simulation, not an official organizer-supplied processor or calibrated hardware. The controlled benchmark described above remains the documented A/B experiment; adding D does not silently change the existing A/B results or imply a fair three-way benchmark.
 
@@ -76,7 +76,7 @@ The Phase 1 guide asks for a static-analysis scan of a public open-source reposi
 python scripts/evaluate_public_repo.py --repo psf/requests --ref v2.34.2
 ```
 
-It writes candidate findings to `results/tables/public_repo_scan_findings.csv` and a summary to `results/tables/public_repo_scan_summary.json`. Scanner execution time is measured separately from download time. The runner writes a review template to `results/tables/public_repo_ground_truth_template.csv`; copy that generated file to `data/raw/psp2_ground_truth.csv` before annotating it. Annotate every detected path/algorithm pair and add any true findings the scanner missed. Keep the generated `repository` and `ref` columns unchanged, then set `is_present=true/false` and `reviewed=true` for every candidate. Add missed true findings with the same repository/ref values. The evaluator rejects labels from a different repository or revision. Precision and recall intentionally remain **pending** until the full audit scope is reviewed:
+It writes candidate findings to `results/tables/public_repo_scan_findings.csv` and a summary to `results/tables/public_repo_scan_summary.json`. Scanner execution time is measured separately from download time. The runner writes a revision-specific review template to `results/tables/public_repo_ground_truth_template.csv`; copy that generated file to `data/raw/psp2_ground_truth.csv` before annotating it. The tracked `data/raw/psp2_ground_truth_template.csv` is a blank schema-only template; prefer the generated one because it is prefilled with the exact repository and revision. Annotate every detected path/algorithm pair and add any true findings the scanner missed. Keep the generated `repository` and `ref` columns unchanged, then set `is_present=true/false` and `reviewed=true` for every candidate. Add missed true findings with the same repository/ref values. The evaluator rejects labels from a different repository or revision. Precision and recall intentionally remain **pending** until the full audit scope is reviewed:
 
 ```powershell
 Copy-Item results/tables/public_repo_ground_truth_template.csv data/raw/psp2_ground_truth.csv
@@ -100,25 +100,27 @@ Do not report unreviewed candidate counts as precision or recall. The scanner is
 
 ## Latest committed benchmark snapshot
 
-The values below are from the committed result CSVs. Runtime is environment-dependent; rerun the notebook in CI or a clean local environment before treating the numbers as a new run.
+The values below come from the same clean CI notebook run with 4096 shots, optimization level 1, seed 42, and the shared assumed noise model. The required A/B benchmark remains primary; Processor D is a supplementary participant-defined 12-qubit research model, not official calibrated hardware or the separate offline C/D Bell-correlation experiment. Runtime is environment-dependent.
 
-| Metric | Processor A | Processor B | B − A |
-|---|---:|---:|---:|
-| Success probability for 101 | 0.741699 | 0.814209 | 0.072510 |
-| Standard error | 0.006839 | 0.006077 | -0.000762 |
-| Compiled depth | 87 | 56 | -31 |
-| Counted two-qubit gates | 48 | 24 | -24 |
-| Estimated SWAP-equivalents | 8.000 | 0.000 | -8.000 |
-| Measured SWAP instructions | 0 | 0 | 0 |
-| Physical qubits used | 3 | 3 | 0 |
-| Total compiled operations | 120 | 96 | -24 |
-| Runtime seconds (committed snapshot) | 0.033352 | 0.014343 | -0.019009 |
+| Metric | Processor A | Processor B | Processor D | B − A | D − A | D − B |
+|---|---:|---:|---:|---:|---:|---:|
+| Success probability for 101 | 0.741699 | 0.814209 | 0.741699 | 0.072510 | 0.000000 | -0.072510 |
+| Standard error | 0.006839 | 0.006077 | 0.006839 | -0.000762 | 0.000000 | 0.000762 |
+| Compiled depth | 87 | 56 | 87 | -31 | 0 | 31 |
+| Counted two-qubit gates | 48 | 24 | 48 | -24 | 0 | 24 |
+| Estimated SWAP-equivalents | 8.000 | 0.000 | 8.000 | -8.000 | 0.000 | 8.000 |
+| Measured SWAP instructions | 0 | 0 | 0 | 0 | 0 | 0 |
+| Physical qubits used | 3 | 3 | 3 | 0 | 0 | 0 |
+| Total compiled operations | 120 | 96 | 120 | -24 | 0 | 24 |
+| Runtime seconds (same CI run) | 0.065273 | 0.027583 | 0.031894 | -0.037690 | -0.033379 | 0.004311 |
 
-**Interpretation:** Processor B improved success probability and compiled operation count for this specific workload and simulator model. This is not a universal processor-superiority claim.
+**Interpretation:** Processor B improved measured success probability and lowered compiled operation count for this selected workload. Processor D matched A on non-runtime metrics in this three-qubit circuit, but that does not mean their coupling graphs are equivalent. These are simulator results from participant-defined research models, not hardware measurements.
+
+Machine-readable evidence: [ABD_comparison.csv](results/tables/ABD_comparison.csv), [processor_D_metrics.csv](results/tables/processor_D_metrics.csv), and the required A/B-only [AB_comparison.csv](results/tables/AB_comparison.csv).
 
 ### Supplementary topology stress test
 
-These synthetic star, chain, and ring workloads complement but do not replace the required Grover benchmark.
+The star, chain, and ring compiler tests compare A and B and complement but do not replace the required Grover benchmark.
 
 | Workload | A depth | B depth | A two-qubit gates | B two-qubit gates | A estimated SWAP-equivalents | B estimated SWAP-equivalents |
 |---|---:|---:|---:|---:|---:|---:|
@@ -126,7 +128,7 @@ These synthetic star, chain, and ring workloads complement but do not replace th
 | chain | 8 | 8 | 8 | 8 | 1.000 | 1.000 |
 | ring | 17 | 9 | 19 | 10 | 4.000 | 1.000 |
 
-Estimated SWAP-equivalents are a proxy, not a direct SWAP count. See report.md and results/tables/ for the detailed report and machine-readable evidence.
+Estimated SWAP-equivalents are a proxy, not a direct SWAP count. See [report.md](report.md) and [results/tables](results/tables) for details.
 
 ---
 
@@ -213,8 +215,10 @@ The JSON coupling maps are documented as **undirected physical couplings** and e
 - [`migration_plan.csv`](results/tables/migration_plan.csv)
 - [`processor_A_metrics.csv`](results/tables/processor_A_metrics.csv)
 - [`processor_B_metrics.csv`](results/tables/processor_B_metrics.csv)
-- [`AB_comparison.csv`](results/tables/AB_comparison.csv)
-- [`final_comparison.csv`](results/tables/final_comparison.csv)
+- [`AB_comparison.csv`](results/tables/AB_comparison.csv) — required A/B benchmark
+- [`processor_D_metrics.csv`](results/tables/processor_D_metrics.csv) — supplementary D run
+- [`ABD_comparison.csv`](results/tables/ABD_comparison.csv) — A/B/D comparison
+- [`final_comparison.csv`](results/tables/final_comparison.csv) — final A/B/D table
 - [`architecture_stress_test.csv`](results/tables/architecture_stress_test.csv) — supplementary topology evidence
 
 ### Figures
@@ -289,7 +293,7 @@ The repository also includes a local Streamlit dashboard with four clearly separ
 - **Overview** — high-level summary of the Phase 1 sample inventory and benchmark.
 - **Phase 2 CSV planner** — upload a CSV, run the same classifier and scoring functions as `run_inventory.py`, inspect labels/waves/manual-review counts, and download the exact eight-column migration plan.
 - **Phase 1 Inventory & roadmap** — inspect the original Phase 1 risk table and its evidence; this legacy view uses the Phase 1 scoring model and is deliberately not presented as the Phase 2 CLI output.
-- **Processor A/B** — measured benchmark comparison from the CSV outputs.
+- **Processor A/B** — required measured benchmark comparison from the CSV outputs. Processor D is documented as a supplementary research run in the notebook and result tables.
 
 Uploaded rows are processed by the app environment with the repository's deterministic heuristic; the dashboard does not call an external AI service. Official classification metrics remain unverified until the official labeled dataset and evaluator are available.
 
@@ -349,7 +353,7 @@ The repository includes regression tests for migration recommendations, processo
 
 Before submitting, run `python -m pytest -q`, `python check_phase1_submission.py`, and execute every cell in `main.ipynb` in a clean environment. Confirm that regenerated tables, figures, and report agree. Run `python validate_processors.py` to check the participant-defined processor models. The scanner's precision and recall remain unverified until the public-repository ground-truth audit is complete.
 
-The benchmark remains a simulator experiment using participant-defined 5/9-qubit research models. Its three-qubit Grover results do not estimate the cost of attacking real RSA/ECC keys.
+The required A/B benchmark remains a simulator experiment using participant-defined 5/9-qubit research models. A supplementary 12-qubit Processor D run is included in `processor_D_metrics.csv` and `ABD_comparison.csv`. Its three-qubit Grover results do not estimate the cost of attacking real RSA/ECC keys.
 
 ## Supplementary topology stress tests
 
@@ -369,8 +373,8 @@ These are supplementary simulator/compiler experiments using participant-defined
 The Phase 2 inventory planner now includes separate tooling for reviewed-label evaluation and synthetic scale benchmarking:
 
 - Standards mapping and known parameter-validation limits: [docs/ALGORITHM_PARAMETER_AUDIT.md](docs/ALGORITHM_PARAMETER_AUDIT.md)
-- Labeled quality metrics (requires a manually reviewed CSV with `asset_id,true_label`):
-  `python scripts/evaluate_inventory.py --ground-truth data/raw/ground_truth.csv --predictions results/tables/crypto_inventory_predictions.csv --output results/inventory_metrics.json`
+- Labeled quality metrics (requires a manually reviewed CSV with `asset_id,true_label`; first create that ground-truth file from reviewed labels, then run the Phase 2 classifier command above):
+  `python scripts/evaluate_inventory.py --ground-truth data/raw/ground_truth.csv --predictions results/tables/phase2_inventory_predictions.csv --output results/inventory_metrics.json`
 - Larger synthetic inventory benchmark (performance only; not a quality score):
   `python scripts/benchmark_inventory.py --sizes 1000 10000 50000 --output results/inventory_scale_benchmark.json`
 
