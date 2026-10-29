@@ -53,3 +53,10 @@ def test_local_inventory_fixture_labels_match_ids_and_are_disclosed_as_synthetic
         "SYMMETRIC_OR_HASH", "LEGACY_BROKEN", "UNKNOWN",
     }
 
+def test_smoke_evaluation_entrypoint_and_vetted_dependency_pins_are_present():
+    root = ROOT
+    assert (root / "scripts" / "run_phase2_smoke_evaluation.py").is_file()
+    requirements = (root / "requirements.txt").read_text(encoding="utf-8")
+    assert "cryptography==50.0.2" in requirements
+    assert "pqcrypto==0.4.0" in requirements
+
