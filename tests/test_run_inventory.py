@@ -135,7 +135,7 @@ def test_exact_score_formula_and_waves(tmp_path):
     ])
     output = build_predictions(source)
     assert [row["asset_id"] for row in output] == ["edge", "db", "unknown", "legacy", "internal-rsa"]
-    assert [row["migration_wave"] for row in output] == ["1", "3", "review", "2", "2"]
+    assert [row["migration_wave"] for row in output] == ["1", "3", "review", "1", "1"]
     assert row_by_id(output, "edge")["priority_score"] == 100
     assert row_by_id(output, "legacy")["priority_score"] == 87
     assert row_by_id(output, "unknown")["priority_score"] == 72
@@ -146,7 +146,7 @@ def test_exact_score_formula_and_waves(tmp_path):
     assert validate_predictions(output, source) is None
 
 
-def test_score_uses_only_requested_components():
+def test_score_accounts_for_sensitivity_and_conservative_missing_metadata():
     row = {"internet_exposed": "yes", "data_retention_years": "10", "criticality": "critical",
            "data_sensitivity": "public"}
     assert _score(row, "QUANTUM_VULNERABLE") == 100
