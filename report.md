@@ -45,9 +45,9 @@ The required three-qubit Grover benchmark can produce identical A/B metrics even
 Estimated SWAP-equivalents are extra two-qubit gates over an all-to-all baseline divided by three; this is a proxy, not a direct SWAP count. Results are simulator/compiler metrics for participant-defined models, not official hardware results or cryptographic attack estimates.
 
 
-## Supplementary Processor D benchmark
+## Benchmark comparison — required A/B plus supplementary D
 
-Processor D is a participant-defined 12-qubit research model, not official calibrated hardware. The same three-qubit Grover circuit and simulator settings were used for this supplementary run. The required A/B table remains primary; this does not represent the separate offline C/D Bell-correlation experiment.
+The required Processor A/B comparison remains the primary Phase 1 benchmark. Processor D is a supplementary participant-defined 12-qubit research model, not official calibrated hardware or the separate offline C/D Bell-correlation experiment. The table below reports A, B, and D from the same clean CI notebook run.
 
 | Metric | Processor A | Processor B | Processor D | B - A | D - A | D - B |
 |---|---:|---:|---:|---:|---:|---:|
@@ -59,6 +59,6 @@ Processor D is a participant-defined 12-qubit research model, not official calib
 | Measured SWAP instructions | 0 | 0 | 0 | 0 | 0 | 0 |
 | Physical qubits used | 3 | 3 | 3 | 0 | 0 | 0 |
 | Total compiled operations | 120 | 96 | 120 | -24 | 0 | 24 |
-| Runtime seconds (captured CI run) | 0.064603 | 0.027573 | 0.030481 | -0.037031 | -0.034122 | 0.002908 |
+| Runtime seconds (same CI run) | 0.065273 | 0.027583 | 0.031894 | -0.037690 | -0.033379 | 0.004311 |
 
 D matched A's non-runtime metrics on this particular three-qubit workload. Only three physical qubits were used because the logical circuit itself uses three qubits; this result does not imply the 12-qubit D graph is identical to A's graph. Runtime is environment-dependent. The complete rows are in results/tables/processor_D_metrics.csv and results/tables/ABD_comparison.csv.
