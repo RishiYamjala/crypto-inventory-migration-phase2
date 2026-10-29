@@ -204,3 +204,58 @@ def test_ambiguous_duplicate_asset_names_are_not_guessed_as_dependencies(tmp_pat
     predictions = build_predictions(path)
     validate_predictions(predictions, path)
     assert predictions.loc[2, "depends_on"] == ""
+
+
+
+def test_cli_runs_end_to_end_and_writes_schema_csv(tmp_path):
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    input_path = tmp_path / "input.csv"
+    output_path = tmp_path / "nested" / "predictions.csv"
+    pd.DataFrame([
+        {"asset_id": "rsa", "algorithm": "RSA-2048", "primitive": "digital_signature"},
+        {"asset_id": "pqc", "algorithm": "ML-KEM-768", "primitive": "key_establishment"},
+    ]).to_csv(input_path, index=False)
+
+    script = Path(__file__).resolve().parents[1] / "run_inventory.py"
+    result = subprocess.run(
+        [sys.executable, str(script), "--input", str(input_path), "--output", str(output_path)],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "Wrote 2 predictions" in result.stdout
+    output = pd.read_csv(output_path, dtype=object)
+    assert list(output.columns) == OUTPUT_COLUMNS
+    assert output["asset_id"].tolist() == ["rsa", "pqc"]
+    validate_predictions(output, input_path)
+
+
+def test_thousand_row_inventory_finishes_within_five_minutes(tmp_path):
+    import time
+
+    path = tmp_path / "large.csv"
+    pd.DataFrame([
+        {
+            "asset_id": f"asset-{i}",
+            "algorithm": ["RSA-2048", "AES-256-GCM", "ML-KEM-768", "SHA-256"][i % 4],
+            "data_retention_years": [1, 5, 10, "permanent"][i % 4],
+            "data_sensitivity": ["public", "internal", "confidential", "restricted"][i % 4],
+            "internet_exposed": ["yes", "no", "unknown", "yes"][i % 4],
+            "criticality": ["low", "medium", "high", "critical"][i % 4],
+        }
+        for i in range(1000)
+    ]).to_csv(path, index=False)
+
+    started = time.perf_counter()
+    predictions = build_predictions(path)
+    elapsed = time.perf_counter() - started
+
+    validate_predictions(predictions, path)
+    assert len(predictions) == 1000
+    assert elapsed < 300
