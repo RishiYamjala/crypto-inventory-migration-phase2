@@ -100,25 +100,7 @@ Do not report unreviewed candidate counts as precision or recall. The scanner is
 
 ## Latest committed benchmark snapshot
 
-The following A/B values match the committed Phase 1 tables. Runtime varies by environment. The required A/B comparison remains primary; Processor D is a supplementary participant-defined 12-qubit research model. Its separate metrics and the clean-run three-way comparison are linked below.
-
-### Required Processor A/B result
-
-| Metric | Processor A | Processor B | B − A |
-|---|---:|---:|---:|
-| Success probability for 101 | 0.741699 | 0.814209 | 0.072510 |
-| Standard error | 0.006839 | 0.006077 | -0.000762 |
-| Compiled depth | 87 | 56 | -31 |
-| Counted two-qubit gates | 48 | 24 | -24 |
-| Estimated SWAP-equivalents | 8.000 | 0.000 | -8.000 |
-| Measured SWAP instructions | 0 | 0 | 0 |
-| Physical qubits used | 3 | 3 | 0 |
-| Total compiled operations | 120 | 96 | -24 |
-| Runtime seconds (committed snapshot) | 0.033352 | 0.014343 | -0.019009 |
-
-**Interpretation:** Processor B improved the measured success probability and lowered compiled operation count for this workload and simulator model. This is not a universal processor-superiority claim.
-
-### Supplementary Processor D comparison
+The values below come from the same clean CI notebook run with 4096 shots, optimization level 1, seed 42, and the shared assumed noise model. The required A/B benchmark remains primary; Processor D is a supplementary participant-defined 12-qubit research model, not official calibrated hardware or the separate offline C/D Bell-correlation experiment. Runtime is environment-dependent.
 
 | Metric | Processor A | Processor B | Processor D | B − A | D − A | D − B |
 |---|---:|---:|---:|---:|---:|---:|
@@ -130,8 +112,11 @@ The following A/B values match the committed Phase 1 tables. Runtime varies by e
 | Measured SWAP instructions | 0 | 0 | 0 | 0 | 0 | 0 |
 | Physical qubits used | 3 | 3 | 3 | 0 | 0 | 0 |
 | Total compiled operations | 120 | 96 | 120 | -24 | 0 | 24 |
+| Runtime seconds (same CI run) | 0.065273 | 0.027583 | 0.031894 | -0.037690 | -0.033379 | 0.004311 |
 
-In this selected three-qubit workload, D matched A's non-runtime metrics even though their coupling graphs differ. Only three physical qubits were used because the benchmark circuit itself uses three logical qubits; this does not establish that D and A are equivalent architectures. The D runtime is recorded separately in processor_D_metrics.csv because execution time varies across CI runs. The full three-way comparison from one notebook run, including same-run runtime deltas, is in ABD_comparison.csv. These are simulated results from participant-defined configurations, not official hardware measurements.
+**Interpretation:** Processor B improved measured success probability and lowered compiled operation count for this selected workload. Processor D matched A on non-runtime metrics in this three-qubit circuit, but that does not mean their coupling graphs are equivalent. These are simulator results from participant-defined research models, not hardware measurements.
+
+Machine-readable evidence: [ABD_comparison.csv](results/tables/ABD_comparison.csv), [processor_D_metrics.csv](results/tables/processor_D_metrics.csv), and the required A/B-only [AB_comparison.csv](results/tables/AB_comparison.csv).
 
 ### Supplementary topology stress test
 
@@ -143,7 +128,7 @@ The star, chain, and ring compiler tests compare A and B and complement but do n
 | chain | 8 | 8 | 8 | 8 | 1.000 | 1.000 |
 | ring | 17 | 9 | 19 | 10 | 4.000 | 1.000 |
 
-Estimated SWAP-equivalents are a proxy, not a direct SWAP count. See report.md and results/tables for details.
+Estimated SWAP-equivalents are a proxy, not a direct SWAP count. See [report.md](report.md) and [results/tables](results/tables) for details.
 
 ---
 
