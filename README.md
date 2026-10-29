@@ -34,6 +34,16 @@
 - NIST-aligned recommendations using ML-KEM, ML-DSA, SLH-DSA, AES-256, AES-256-GCM, SHA-256, and SHA-3
 - Phase-based migration prioritization
 
+#### Run the schema-driven inventory classifier
+
+```bash
+python run_inventory.py --input data/raw/inventory.csv --output results/tables/crypto_inventory_predictions.csv
+```
+
+The command runs offline and writes one prediction per input row. The input CSV must include an `algorithm` column and either `asset_id` or `asset_name`; optional risk fields include `data_retention_years`, `data_sensitivity`, `internet_exposed`, and `criticality`. Missing or contradictory cryptographic metadata is routed to `UNKNOWN`/manual review rather than treated as safe. The output includes the predicted label, 0–100 priority score, rank, recommendation, migration wave, dependency IDs, and rationale.
+
+To run the full test suite, use `python -m pytest -q`. The schema-specific tests also exercise the CLI and a 1,000-row inventory.
+
 ### Part B — Controlled A/B benchmark
 
 - Three-qubit Grover search for marked state `101`
