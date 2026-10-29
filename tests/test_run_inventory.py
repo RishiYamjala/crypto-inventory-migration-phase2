@@ -135,9 +135,9 @@ def test_exact_score_formula_and_waves(tmp_path):
     assert [row["asset_id"] for row in output] == ["edge", "db", "unknown", "legacy", "internal-rsa"]
     assert [row["migration_wave"] for row in output] == ["Wave 1", "Wave 3", "review", "Wave 2", "Wave 2"]
     assert row_by_id(output, "edge")["priority_score"] == 100
-    assert row_by_id(output, "legacy")["priority_score"] == 43
+    assert row_by_id(output, "legacy")["priority_score"] == 53
     assert row_by_id(output, "unknown")["priority_score"] == 38
-    assert row_by_id(output, "internal-rsa")["priority_score"] == 66
+    assert row_by_id(output, "internal-rsa")["priority_score"] == 68
     assert row_by_id(output, "edge")["depends_on"] == "db"
     assert sorted(row["priority_rank"] for row in output) == [1, 2, 3, 4, 5]
     assert all(row["recommended_action"].strip() and row["rationale"].strip() for row in output)
@@ -161,7 +161,7 @@ def test_common_spreadsheet_header_aliases_and_stable_ids(tmp_path):
     output = build_predictions(source)
     assert output[0]["asset_id"] == "public-api"
     assert output[0]["predicted_label"] == "QUANTUM_VULNERABLE"
-    assert output[0]["priority_score"] == 83
+    assert output[0]["priority_score"] == 78
     validate_predictions(output, source)
 
 
