@@ -125,7 +125,10 @@ def classify_algorithm(value: Any) -> str:
         return "UNKNOWN"
 
     # Hybrid must be checked before either component family.
-    has_pqc = any(marker in s for marker in PQC_MARKERS)
+    has_pqc = (
+        any(marker in s for marker in PQC_MARKERS if marker not in {"LMS", "XMSS"})
+        or s.startswith(("LMS", "XMSS"))
+    )
     # DSA is a substring of ML-DSA, FN-DSA, and SLH-DSA; do not mistake
     # those post-quantum names for a classical component.
     classical_markers = tuple(m for m in CLASSICAL_MARKERS if m != "DSA")
