@@ -53,6 +53,9 @@ ROLE_ALIASES = {
     "signatures": "digital_signature",
     "signing": "digital_signature",
     "authentication": "digital_signature",
+    "digitalsignature": "digital_signature",
+    "keyestablishment": "key_establishment",
+    "publickeyencryption": "public_key_encryption",
     "publickeyencryption": "public_key_encryption",
     "encryption": "symmetric_encryption",
     "symmetricencryption": "symmetric_encryption",
@@ -114,6 +117,8 @@ def classify_algorithm(value: Any) -> str:
     classical_markers = tuple(m for m in CLASSICAL_MARKERS if m != "DSA")
     has_classical = any(marker in s for marker in classical_markers)
     if not has_classical and "DSA" in s and not any(x in s for x in ("MLDSA", "FNDSA", "SLHDSA")):
+        has_classical = True
+    if re.match(r"^DH(?:\\d|$)", s):
         has_classical = True
     if has_pqc and has_classical:
         return "HYBRID"
@@ -233,7 +238,7 @@ def _yes(value: Any) -> bool | None:
     s = _text(value).lower().replace("_", "-")
     if s in {"yes", "true", "1", "internet", "internet-exposed", "internet-facing", "public-facing", "externally-exposed", "external"}:
         return True
-    if s in {"no", "false", "0", "internal", "not-exposed", "not-internet-facing", "private"}:
+    if s in {"no", "false", "0", "internal", "not-exposed", "not-internet-facing", "private", "not internet-facing", "not public-facing"}:
         return False
     return None
 
@@ -360,17 +365,24 @@ def _stable_asset_ids(source: pd.DataFrame) -> list[str]:
     return ids
 
 
-def _dependency_ids(value: Any, known_ids: set[str]) -> str:
-    """Keep only dependency references that exactly match known asset IDs."""
+def _dependency_ids(value: Any, known_ids: set[str], source: pd.DataFrame, asset_ids: list[str]) -> str:
+    """Resolve dependency references to known asset IDs; discard unresolved text."""
     raw = _text(value)
     if not raw:
         return ""
+    aliases: dict[str, str] = {asset_id: asset_id for asset_id in asset_ids}
+    if "asset_name" in source.columns:
+        for index, name in enumerate(source["asset_name"].tolist()):
+            normalized_name = _text(name)
+            if normalized_name and normalized_name not in aliases:
+                aliases[normalized_name] = asset_ids[index]
     parts = re.split(r"[;,|]", raw)
     valid = []
     for part in parts:
         item = part.strip()
-        if item in known_ids and item not in valid:
-            valid.append(item)
+        resolved = aliases.get(item, item if item in known_ids else "")
+        if resolved and resolved in known_ids and resolved not in valid:
+            valid.append(resolved)
     return ";".join(valid)
 
 
@@ -401,7 +413,7 @@ def build_predictions(input_csv: str | Path) -> pd.DataFrame:
             wave = "3"
 
         # Only actual asset IDs supplied in the input can be dependencies.
-        depends = _dependency_ids(_first(row, ("depends_on",)), known_ids)
+        depends = _dependency_ids(_first(row, ("depends_on",)), known_ids, source, asset_ids)
         rationale = _rationale(row, label, score)
         rows.append({
             "asset_id": asset_ids[row_index],
