@@ -372,10 +372,15 @@ def _rationale(row: dict[str, Any], label: str, score: int) -> str:
         missing.append("data_retention_years")
     if not _first(row, ("criticality",)):
         missing.append("criticality")
+    base = {
+        "QUANTUM_VULNERABLE": 40, "LEGACY_BROKEN": 35, "UNKNOWN": 20,
+        "HYBRID": 15, "QUANTUM_RESISTANT": 5, "SYMMETRIC_OR_HASH": 5,
+    }[label]
+    raw_total = base + exposure_bonus + retention_bonus + criticality_bonus
     parts = [
         f"label={label}",
         f"score={score}/100",
-        f"base+exposure+retention+criticality={score} ({exposure_bonus}+{retention_bonus}+{criticality_bonus} bonuses before cap)",
+        f"score_components=base:{base}+exposure:{exposure_bonus}+retention:{retention_bonus}+criticality:{criticality_bonus}={raw_total}; capped_final={score}",
         f"exposure={_first(row, ('internet_exposed',)) or 'unknown'}",
         f"retention={_first(row, ('data_retention_years', 'retention_years', 'retention', 'data_retention')) or 'unknown'}",
         f"criticality={_first(row, ('criticality',)) or 'unspecified'}",
