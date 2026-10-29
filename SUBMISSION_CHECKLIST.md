@@ -18,7 +18,7 @@ This checklist tracks the PS-P2 inventory CLI against the user-provided task req
 - [x] Added a local `examples/inventory_dev.csv` smoke fixture with explicit expected labels; clearly distinguished from the organizer's missing dataset.
 - [x] Added a repeatable algorithm-only baseline comparison and local metrics generator. Outputs are marked local/synthetic, not official results.
 - [x] Added pinned `cryptography` and `pqcrypto` dependencies plus runtime smoke tests for library-backed AES-GCM, ML-KEM-768, and ML-DSA-65 operations.
-- [x] Added `platform_A_info.json` as a declared workflow profile and a runtime capture script. The manifest does not invent missing hardware details.
+- [x] Added `platform_A_info.json` as a runtime-captured GitHub Actions runner snapshot plus a portable capture script. It is not the submitter's machine or official checker output.
 
 ## Blocked / not verifiable from this checkout
 
@@ -44,4 +44,4 @@ The workflow now:
 3. Performs library-backed AES-GCM, ML-KEM-768, and ML-DSA-65 round trips using pinned `cryptography` and `pqcrypto` packages.
 4. Captures actual CI host/package metadata into `platform_A_info.ci.json` as a workflow artifact.
 
-The committed `platform_A_info.json` documents declared settings only; runtime metadata is available from the capture script/CI artifact. The official environment check and evaluator remain blocked until organizers provide their files.
+The committed `platform_A_info.json` records the validated GitHub Actions runner and pinned package versions; a fresh capture is available in the CI artifact. Tracked smoke predictions and metrics are committed, but their labels remain synthetic. The official environment check and evaluator remain blocked until organizers provide their files.
