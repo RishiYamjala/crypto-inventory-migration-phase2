@@ -63,6 +63,6 @@ The checkout now contains:
 - `scripts/run_phase2_smoke_evaluation.py`: executes the local classifier, scores the hand-authored expected labels with `scripts/evaluate_inventory.py`, and compares it with an algorithm-name-only baseline.
 - `scripts/crypto_library_selftest.py`: verifies that pinned library calls for ML-KEM-768, ML-DSA-65 and AES-256-GCM can complete a round trip. It does not implement cryptographic primitives itself.
 - `scripts/capture_platform_info.py`: captures actual runtime and installed dependency metadata. CI stores its capture as an artifact.
-- `platform_A_info.json`: a committed declarative profile of the workflow's requested environment; unpinned machine details remain null and the file is not official `common/env_check.py` output.
+- `platform_A_info.json`: a committed runtime snapshot of the GitHub Actions runner and installed pinned package versions. It is not the submitter's personal machine or official `common/env_check.py` output. Fresh runtime captures are uploaded by CI.
 
 CI is configured to run these smoke checks and upload generated local outputs. They do not close the official-evaluation gap: the organizer's `P2_inventory/inventory_dev.csv`, labels, baseline classifier, evaluator, environment checker, README template, and report template are still required. No official Macro-F1 or related evaluator-specific metrics should be claimed from the synthetic fixture.
