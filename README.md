@@ -239,6 +239,11 @@ The JSON coupling maps are documented as **undirected physical couplings** and e
 - [`ABD_comparison.csv`](results/tables/ABD_comparison.csv) — A/B/D comparison
 - [`final_comparison.csv`](results/tables/final_comparison.csv) — final A/B/D table
 - [`architecture_stress_test.csv`](results/tables/architecture_stress_test.csv) — supplementary topology evidence
+- [`inventory_dev_predictions.csv`](results/tables/inventory_dev_predictions.csv) — local CLI output on the synthetic regression fixture
+- [`inventory_dev_baseline_predictions.csv`](results/tables/inventory_dev_baseline_predictions.csv) — algorithm-name-only baseline output
+- [`inventory_baseline_comparison.json`](results/tables/inventory_baseline_comparison.json) — local evaluation compared with baseline
+
+See [`results/inventory_eval_metrics.json`](results/inventory_eval_metrics.json) for the same local smoke-evaluation report. These committed outputs are not official hackathon evaluation results.
 
 ### Figures
 
