@@ -163,12 +163,15 @@ def classify_algorithm(value: Any, params: Any = "") -> str:
     # DSA in ML-DSA/FN-DSA/SLH-DSA is not classical DSA.
     classical_markers = (
         "RSA", "RS256", "RS384", "RS512", "RSASHA256", "RSASHA384", "RSASHA512",
-        "ECDH", "ECDSA", "ECDHE", "ES256", "ES384", "ES512", "ECDSAP256SHA256",
+        "ECDH", "ECDSA", "ECDHE", "ECDSAP256SHA256",
         "ECDSAWITHSHA384", "ED25519", "ED448", "EDDSA", "CURVE25519",
         "X25519", "X448", "FFDHE", "MODP", "SECP", "P256", "P384", "P521",
         "DIFFIEHELLMAN", "ELGAMAL",
     )
-    has_classical = any(marker in s for marker in classical_markers)
+    has_classical = (
+        any(marker in s for marker in classical_markers)
+        or s in {"ES256", "ES384", "ES512"}
+    )
     if not has_classical and "DSA" in s and not any(x in s for x in ("MLDSA", "FNDSA", "SLHDSA")):
         has_classical = True
     if re.match(r"^DH(?:\d|$)", s):
@@ -257,11 +260,14 @@ def classify_record(row: dict[str, Any]) -> str:
     has_symmetric = any(marker in norm_alg for marker in ("AES", "CHACHA20", "SM4", "DES", "TDEA", "DESEDE", "RC2", "RC4"))
     has_mac = any(marker in norm_alg for marker in ("HMAC", "CMAC", "GMAC", "POLY1305", "KMAC"))
     has_kdf = norm_alg.startswith(("HKDF", "PBKDF2", "SCRYPT", "ARGON2", "CONCATKDF", "SP800108"))
-    has_signature = any(marker in norm_alg for marker in (
-        "ECDSA", "ES256", "ES384", "ES512", "CURVE25519", "ED25519", "ED448", "EDDSA",
-        "MLDSA", "DILITHIUM", "FNDSA", "FALCON", "SLHDSA", "SPHINCS", "LMS", "XMSS",
-        "RSA", "RS256", "RS384", "RS512", "DSA",
-    )) and not any(marker in norm_alg for marker in ("OAEP", "RSAENCRYPT", "RSAES"))
+    has_signature = (
+        any(marker in norm_alg for marker in (
+            "ECDSA", "CURVE25519", "ED25519", "ED448", "EDDSA",
+            "MLDSA", "DILITHIUM", "FNDSA", "FALCON", "SLHDSA", "SPHINCS",
+            "LMS", "XMSS", "RSA", "RS256", "RS384", "RS512", "DSA",
+        ))
+        or norm_alg in {"ES256", "ES384", "ES512"}
+    ) and not any(marker in norm_alg for marker in ("OAEP", "RSAENCRYPT", "RSAES"))
     has_key_establishment = any(marker in norm_alg for marker in (
         "RSA", "ECDH", "ECDHE", "X25519", "X448", "CURVE25519", "DIFFIEHELLMAN",
         "FFDHE", "MODP", "MLKEM", "KYBER", "HQC",
