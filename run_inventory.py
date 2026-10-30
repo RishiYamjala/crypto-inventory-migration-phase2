@@ -157,7 +157,8 @@ def classify_algorithm(value: Any, params: Any = "") -> str:
         has_pqc = bool(re.search(r"HQC(128|192|256)", s) or p in {"128", "192", "256"})
     elif any(x in s for x in ("SLHDSA", "SPHINCS")):
         has_pqc = True
-    elif s.startswith("LMS") or s.startswith("XMSS"):
+    elif re.match(r"^(?:HSS)?(?:LMS|XMSS|LMOTS)", s):
+        # LMS/HSS, XMSS and LM-OTS are stateful hash-based signature families/components.
         has_pqc = True
 
     # DSA in ML-DSA/FN-DSA/SLH-DSA is not classical DSA.
@@ -179,8 +180,9 @@ def classify_algorithm(value: Any, params: Any = "") -> str:
 
     if has_pqc and has_classical:
         return "HYBRID"
-    if "HYBRID" in s and has_pqc:
-        return "HYBRID"
+    # An explicit HYBRID marker is not enough: both component families must be identifiable.
+    if "HYBRID" in s and not (has_pqc and has_classical):
+        return "UNKNOWN"
     if has_pqc:
         return "QUANTUM_RESISTANT"
     if has_classical:
@@ -195,54 +197,103 @@ def classify_algorithm(value: Any, params: Any = "") -> str:
 
 
 def _parameter_issue(algorithm: Any, params: Any) -> bool:
-    """Return True only when supplied parameter metadata is invalid or contradictory."""
+    """Return True when supplied parameter metadata is invalid or contradicts the algorithm."""
     a, p = _norm(algorithm), _norm(params)
     if not p:
-        # A fully specified algorithm name can stand on its own.
+        # Parameter metadata is optional when the algorithm name is sufficiently specific.
         return False
 
-    specifications = (
-        (r"(?:MLKEM|KYBER)(512|768|1024)", {"512", "768", "1024"}, "ML-KEM/Kyber"),
-        (r"(?:MLDSA)(44|65|87)", {"44", "65", "87"}, "ML-DSA"),
-        (r"(?:FNDSA|FALCON)(512|1024)", {"512", "1024"}, "FN-DSA/Falcon"),
-        (r"HQC(128|192|256)", {"128", "192", "256"}, "HQC"),
-    )
-    for pattern, allowed, _name in specifications:
+    def embedded(pattern: str) -> str:
         match = re.search(pattern, a)
-        if match:
-            supplied = re.fullmatch(r"(512|768|1024|44|65|87|128|192|256)", p)
-            if supplied and supplied.group(1) not in allowed:
+        return match.group(1) if match else ""
+
+    # ML-KEM / Kyber standardized and historical names.
+    if "MLKEM" in a or "KYBER" in a:
+        allowed = {"512", "768", "1024"}
+        supplied = p if p in allowed else embedded(r"(?:MLKEM|KYBER)(512|768|1024)")
+        if supplied not in allowed:
+            return True
+        named = embedded(r"(?:MLKEM|KYBER)(512|768|1024)")
+        if named and p in allowed and named != p:
+            return True
+
+    # ML-DSA / Dilithium: Dilithium2/3/5 correspond to ML-DSA-44/65/87.
+    if "MLDSA" in a or "DILITHIUM" in a:
+        allowed = {"44", "65", "87", "2", "3", "5"}
+        if p not in allowed:
+            return True
+        named_modern = embedded(r"MLDSA(44|65|87)")
+        named_legacy = embedded(r"DILITHIUM([235])")
+        legacy_to_modern = {"2": "44", "3": "65", "5": "87"}
+        if named_modern and p in {"44", "65", "87"} and named_modern != p:
+            return True
+        if named_modern and p in {"2", "3", "5"} and legacy_to_modern[p] != named_modern:
+            return True
+        if named_legacy and p in {"2", "3", "5"} and named_legacy != p:
+            return True
+        if named_legacy and p in {"44", "65", "87"} and legacy_to_modern[named_legacy] != p:
+            return True
+
+    # FN-DSA / Falcon.
+    if "FNDSA" in a or "FALCON" in a:
+        allowed = {"512", "1024"}
+        if p not in allowed:
+            return True
+        named = embedded(r"(?:FNDSA|FALCON)(512|1024)")
+        if named and named != p:
+            return True
+
+    # HQC.
+    if "HQC" in a:
+        allowed = {"128", "192", "256"}
+        if p not in allowed:
+            return True
+        named = embedded(r"HQC(128|192|256)")
+        if named and named != p:
+            return True
+
+    # SLH-DSA / SPHINCS+ parameter names, e.g. SHA2-128s or SHAKE-256f.
+    if "SLHDSA" in a or "SPHINCS" in a:
+        valid = re.fullmatch(r"(?:SHA2|SHAKE)(?:128|192|256)(?:S|F)?", p)
+        if not valid:
+            return True
+        named = embedded(r"(?:SHA2|SHAKE)(128|192|256)([SF])?")
+        if named:
+            supplied = re.search(r"(?:SHA2|SHAKE)(128|192|256)([SF])?", p)
+            if not supplied or named.group(1) != supplied.group(1):
                 return True
-            if supplied and supplied.group(1) != match.group(1):
+            named_family = "SHAKE" if "SHAKE" in a else "SHA2"
+            supplied_family = "SHAKE" if p.startswith("SHAKE") else "SHA2"
+            if named_family in a and named_family != supplied_family:
+                return True
+            if named.group(2) and named.group(2) != (supplied.group(2) or ""):
                 return True
 
-    if "MLKEM" in a or "KYBER" in a:
-        if p not in {"512", "768", "1024"} and not re.fullmatch(r"(?:MLKEM|KYBER)(512|768|1024)", p):
+    # LMS/HSS and XMSS parameter encodings. The normalized forms omit separators.
+    if any(token in a for token in ("LMS", "HSS")):
+        if not re.fullmatch(r"(?:HSS)?(?:LMS)?(?:SHA256|SHAKE256)M(?:24|32)H(?:5|10|15|20|25)", p):
             return True
-        embedded = re.search(r"(?:MLKEM|KYBER)(512|768|1024)", a)
-        supplied = re.search(r"(512|768|1024)", p)
-        if embedded and supplied and embedded.group(1) != supplied.group(1):
+        named = re.search(r"(?:HSS)?(?:LMS)?(?:SHA256|SHAKE256)M(?:24|32)H(?:5|10|15|20|25)", a)
+        if named and named.group(0) != p:
             return True
-    if "MLDSA" in a:
-        if p not in {"44", "65", "87"} and not re.fullmatch(r"MLDSA(44|65|87)", p):
+
+    if "XMSS" in a:
+        if not re.fullmatch(r"(?:XMSS)?(?:SHA2|SHAKE)(?:10|16|20)(?:256|512)", p):
             return True
-        embedded = re.search(r"MLDSA(44|65|87)", a)
-        supplied = re.search(r"(44|65|87)", p)
-        if embedded and supplied and embedded.group(1) != supplied.group(1):
+        named = re.search(r"(?:XMSS)?(?:SHA2|SHAKE)(?:10|16|20)(?:256|512)", a)
+        if named and named.group(0) != p:
             return True
-    if "SLHDSA" in a and not re.fullmatch(r"(?:SHA2|SHAKE)(?:128|192|256)(?:S|F)?", p):
-        return True
-    if a.startswith("LMS") and not re.fullmatch(r"(?:LMS)?SHA(?:256|512)M(?:32|24)H(?:5|10|15|20|25)", p):
-        return True
-    if a.startswith("XMSS") and not re.fullmatch(r"(?:XMSS)?SHA2?(?:10|16|20)(?:256|512)", p):
-        return True
+
+    if "LMOTS" in a:
+        if not re.fullmatch(r"(?:LMOTS)?(?:SHA256|SHAKE256)N(?:24|32)W(?:1|2|4|8)", p):
+            return True
 
     # Explicit AES key-size conflicts are invalid metadata.
     if "AES" in a and p.isdigit():
         if p not in {"128", "192", "256"}:
             return True
-        embedded = re.search(r"AES(128|192|256)", a)
-        if embedded and embedded.group(1) != p:
+        named = embedded(r"AES(128|192|256)")
+        if named and named != p:
             return True
     return False
 
@@ -256,7 +307,11 @@ def classify_record(row: dict[str, Any]) -> str:
         return "UNKNOWN"
 
     norm_alg = _norm(algorithm)
-    has_hash = any(marker in norm_alg for marker in HASH_MARKERS) or norm_alg.startswith(("MD2", "MD4", "MD5"))
+    # SHA-1 (like MD2/MD4/MD5) is a legacy hash and must still validate as a hash role.
+    has_hash = (
+        any(marker in norm_alg for marker in HASH_MARKERS)
+        or norm_alg.startswith(("MD2", "MD4", "MD5", "SHA1"))
+    )
     has_symmetric = any(marker in norm_alg for marker in ("AES", "CHACHA20", "SM4", "DES", "TDEA", "DESEDE", "RC2", "RC4"))
     has_mac = any(marker in norm_alg for marker in ("HMAC", "CMAC", "GMAC", "POLY1305", "KMAC"))
     has_kdf = norm_alg.startswith(("HKDF", "PBKDF2", "SCRYPT", "ARGON2", "CONCATKDF", "SP800108"))
@@ -264,7 +319,7 @@ def classify_record(row: dict[str, Any]) -> str:
         any(marker in norm_alg for marker in (
             "ECDSA", "CURVE25519", "ED25519", "ED448", "EDDSA",
             "MLDSA", "DILITHIUM", "FNDSA", "FALCON", "SLHDSA", "SPHINCS",
-            "LMS", "XMSS", "RSA", "RS256", "RS384", "RS512", "DSA",
+            "LMS", "XMSS", "HSS", "LMOTS", "RSA", "RS256", "RS384", "RS512", "DSA",
         ))
         or norm_alg in {"ES256", "ES384", "ES512"}
     ) and not any(marker in norm_alg for marker in ("OAEP", "RSAENCRYPT", "RSAES"))
