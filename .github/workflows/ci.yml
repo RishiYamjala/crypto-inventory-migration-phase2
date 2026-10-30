@@ -63,12 +63,20 @@ jobs:
       - name: Check required Phase 1 artifacts
         run: python check_phase1_submission.py
 
+      - name: Package exact checked-out source for local official-kit evaluation
+        if: always()
+        run: |
+          zip -qr phase2-source-snapshot.zip . \
+            -x '.git/*' '.pytest_cache/*' '*/__pycache__/*' \
+               'phase2-source-snapshot.zip'
+
       - name: Upload regenerated benchmark and scanner evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: master-guide-v2-validation-evidence
           path: |
+            phase2-source-snapshot.zip
             executed_main.ipynb
             report.md
             platform_A_info.ci.json
