@@ -272,3 +272,53 @@ def test_cli_uses_only_python_standard_library_imports():
         elif isinstance(node, ast.ImportFrom) and node.module:
             imported.add(node.module.split(".")[0])
     assert imported <= allowed, f"Non-standard-library imports found: {sorted(imported - allowed)}"
+
+
+# Regression coverage for classifier edge cases fixed in the PQC audit.
+def test_sha1_is_legacy_even_when_declared_as_hash():
+    assert classify_algorithm("SHA-1") == "LEGACY_BROKEN"
+    assert classify_record({"algorithm": "SHA-1", "primitive": "hash"}) == "LEGACY_BROKEN"
+
+
+@pytest.mark.parametrize("algorithm", [
+    "HSS-LMS", "HSS_LMS_SHA256_M32_H10", "LM-OTS", "LMOTS-SHA256-N32-W8",
+    "XMSS-SHA2_10_256", "XMSSMT-SHA2_20/256",
+])
+def test_stateful_hash_based_signature_families_are_recognized(algorithm):
+    assert classify_algorithm(algorithm) == "QUANTUM_RESISTANT"
+
+
+def test_hss_lms_and_lmots_parameter_validation():
+    assert _parameter_issue("HSS-LMS", "LMS_SHA256_M32_H10") is False
+    assert _parameter_issue("HSS-LMS", "bogus") is True
+    assert _parameter_issue("LMOTS", "LMOTS_SHA256_N32_W8") is False
+    assert _parameter_issue("LMOTS", "bogus") is True
+
+
+@pytest.mark.parametrize("algorithm", [
+    "HYBRID-ML-KEM-768", "HYBRID-ML-DSA-65", "HYBRID-RSA",
+])
+def test_incomplete_hybrid_name_is_not_accepted(algorithm):
+    assert classify_algorithm(algorithm) == "UNKNOWN"
+
+
+@pytest.mark.parametrize("algorithm", [
+    "X25519+ML-KEM-768", "RSA-3072+ML-DSA-65",
+])
+def test_hybrid_requires_both_recognized_component_families(algorithm):
+    assert classify_algorithm(algorithm) == "HYBRID"
+
+
+@pytest.mark.parametrize(
+    ("algorithm", "params", "expected"),
+    [
+        ("Dilithium3", "65", False),
+        ("Dilithium3", "44", True),
+        ("ML-DSA-65", "65", False),
+        ("ML-DSA-65", "87", True),
+        ("SPHINCS+-SHA2-128s", "SHA2-128s", False),
+        ("SPHINCS+-SHA2-128s", "SHAKE-128s", True),
+    ],
+)
+def test_dilithium_and_sphincs_parameter_alias_consistency(algorithm, params, expected):
+    assert _parameter_issue(algorithm, params) is expected
