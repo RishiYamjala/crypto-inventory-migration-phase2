@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise vetted library APIs; no cryptographic primitive is implemented here."""
+"""Exercise the official QFF vetted library APIs; no cryptographic primitive is implemented here."""
 from __future__ import annotations
 
 import argparse
@@ -8,33 +8,69 @@ import json
 import secrets
 from pathlib import Path
 
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from pqcrypto.kem.ml_kem_768 import decrypt as kem_decapsulate
-from pqcrypto.kem.ml_kem_768 import encrypt as kem_encapsulate
-from pqcrypto.kem.ml_kem_768 import generate_keypair as kem_generate_keypair
-from pqcrypto.sign.ml_dsa_65 import generate_keypair as signature_generate_keypair
-from pqcrypto.sign.ml_dsa_65 import sign as signature_sign
-from pqcrypto.sign.ml_dsa_65 import verify as signature_verify
-
 
 def run_self_tests() -> dict:
-    # ML-KEM is called through pqcrypto; only status flags are returned, never keys.
-    kem_public, kem_secret = kem_generate_keypair()
-    kem_ciphertext, shared_secret_sender = kem_encapsulate(kem_public)
-    shared_secret_receiver = kem_decapsulate(kem_secret, kem_ciphertext)
-    kem_round_trip = secrets.compare_digest(shared_secret_sender, shared_secret_receiver)
+    # The official kit uses cryptography's ML-KEM and ML-DSA APIs, plus pqcrypto's
+    # SLH-DSA API. Imports stay inside this function so test collection remains
+    # possible even when a local environment has not installed the kit packages.
+    from cryptography.exceptions import InvalidSignature
+    from cryptography.hazmat.primitives.asymmetric import mldsa, mlkem
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    from pqcrypto.kem import ml_kem_768 as pq_kem
+    from pqcrypto.sign import slh_dsa_sha2_128s
+
+    message = b"Crypto Inventory & Migration Planner library self-test"
+
+    # ML-KEM-768 round-trip and tamper check using the API specified in the kit.
+    kem_private = mlkem.MLKEM768PrivateKey.generate()
+    kem_public = kem_private.public_key()
+    kem_secret, kem_ciphertext = kem_public.encapsulate()
+    kem_round_trip = secrets.compare_digest(kem_secret, kem_private.decapsulate(kem_ciphertext))
     if not kem_round_trip:
         raise RuntimeError("ML-KEM shared-secret round trip failed")
 
-    # ML-DSA key generation, signing, and verification are library calls.
-    signing_public, signing_secret = signature_generate_keypair()
-    message = b"Crypto Inventory & Migration Planner library self-test"
-    signature = signature_sign(signing_secret, message)
-    signature_round_trip = bool(signature_verify(signing_public, message, signature))
-    if not signature_round_trip:
-        raise RuntimeError("ML-DSA signature verification failed")
+    changed_ct = bytearray(kem_ciphertext)
+    changed_ct[0] ^= 1
+    try:
+        changed_secret = kem_private.decapsulate(bytes(changed_ct))
+        kem_tamper_rejected = not secrets.compare_digest(kem_secret, changed_secret)
+    except Exception:
+        # Some providers reject malformed ciphertexts; others return a different secret.
+        kem_tamper_rejected = True
+    if not kem_tamper_rejected:
+        raise RuntimeError("ML-KEM tampered ciphertext was not detected")
 
-    # Authenticated symmetric encryption is provided by cryptography's AESGCM.
+    # Cross-library ML-KEM interoperability (the kit explicitly checks this).
+    pq_ciphertext, pq_secret = pq_kem.encaps(kem_public.public_bytes_raw())
+    interop_round_trip = secrets.compare_digest(pq_secret, kem_private.decapsulate(pq_ciphertext))
+    if not interop_round_trip:
+        raise RuntimeError("cryptography <-> pqcrypto ML-KEM interoperability failed")
+
+    # ML-DSA-65 signing and modified-message rejection through cryptography.
+    signature_private = mldsa.MLDSA65PrivateKey.generate()
+    signature = signature_private.sign(message)
+    signature_private.public_key().verify(signature, message)
+    try:
+        signature_private.public_key().verify(signature, message + b" changed")
+        mldsa_tamper_rejected = False
+    except InvalidSignature:
+        mldsa_tamper_rejected = True
+    if not mldsa_tamper_rejected:
+        raise RuntimeError("ML-DSA accepted a modified message")
+
+    # SLH-DSA-SHA2-128s signing and verification through pqcrypto.
+    slh_public, slh_secret = slh_dsa_sha2_128s.keygen()
+    slh_signature = slh_dsa_sha2_128s.sign(slh_secret, message)
+    slh_dsa_sha2_128s.verify(slh_public, message, slh_signature)
+    try:
+        slh_dsa_sha2_128s.verify(slh_public, message + b" changed", slh_signature)
+        slh_tamper_rejected = False
+    except Exception:
+        slh_tamper_rejected = True
+    if not slh_tamper_rejected:
+        raise RuntimeError("SLH-DSA accepted a modified message")
+
+    # AES-256-GCM authenticated encryption/decryption through cryptography.
     aes_key = AESGCM.generate_key(bit_length=256)
     aes = AESGCM(aes_key)
     nonce = secrets.token_bytes(12)
@@ -47,11 +83,16 @@ def run_self_tests() -> dict:
 
     return {
         "status": "passed",
-        "scope": "library API smoke test only; not a security certification or production key-management design",
+        "scope": "official-kit library API smoke tests; not a security certification or production key-management design",
         "primitives_implemented_in_project": False,
         "tests": {
             "ml_kem_768_shared_secret_round_trip": kem_round_trip,
-            "ml_dsa_65_signature_verification": signature_round_trip,
+            "ml_kem_768_tamper_rejected": kem_tamper_rejected,
+            "ml_kem_768_cryptography_pqcrypto_interoperability": interop_round_trip,
+            "ml_dsa_65_signature_verification": True,
+            "ml_dsa_65_modified_message_rejected": mldsa_tamper_rejected,
+            "slh_dsa_sha2_128s_signature_verification": True,
+            "slh_dsa_sha2_128s_modified_message_rejected": slh_tamper_rejected,
             "aes_256_gcm_authenticated_encryption_round_trip": aead_round_trip,
         },
         "library_versions": {

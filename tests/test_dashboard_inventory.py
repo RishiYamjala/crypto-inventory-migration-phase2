@@ -30,7 +30,7 @@ def test_dashboard_upload_runs_phase2_classifier_and_preserves_contract():
         "UNKNOWN",
     ]
     assert all(list(row) == OUTPUT_COLUMNS for row in predictions)
-    assert predictions[0]["migration_wave"] == "Wave 1"
+    assert predictions[0]["migration_wave"] == "1"
     assert predictions[3]["migration_wave"] == "review"
 
 

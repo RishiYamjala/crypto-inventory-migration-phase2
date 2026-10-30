@@ -8,13 +8,8 @@
 ## Code-level fixes merged into main
 
 1. **Third-party dependency in the CLI.** The previous `run_inventory.py` imported pandas, contrary to the task requirement for an offline standard-library-only CLI. It now uses `argparse`, `csv`, `re`, `pathlib`, and other Python standard-library modules only. The inventory benchmark was updated to call the same CSV-based API.
-2. **Scoring did not match the task formula.** The prior implementation used different base scores and extra sensitivity/key-size bonuses. The CLI now uses only the specified components:
-   - Base: quantum-vulnerable 40; legacy-broken 35; unknown 20; hybrid 15; quantum-resistant/symmetric-or-hash 5.
-   - Exposure: yes +25; otherwise +10.
-   - Retention: permanent or at least 10 years +20; 5–9 years +10; under 5 years or unknown +5.
-   - Criticality: critical +15; high/medium +8; low or unspecified +3.
-   - Final score is capped at 100.
-3. **Wave labels did not match the task wording.** The previous implementation emitted `1`, `2`, `3`; it now emits `Wave 1`, `Wave 2`, `Wave 3`, or `review`. Unknown records are always routed to `review`; a score of 75+ or an exposed quantum-vulnerable record is Wave 1; remaining quantum-vulnerable/legacy-broken records are Wave 2; other known categories are Wave 3.
+2. **Scoring now uses the risk dimensions required by PS-P2.** The current patch preserves label bases (quantum-vulnerable 40; legacy-broken 35; unknown 20; hybrid 15; quantum-resistant/symmetric-or-hash 5) and explicitly adds internet exposure, data sensitivity, retention, and criticality. Unknown exposure, sensitivity, retention, and criticality receive documented nonzero allowances instead of being silently treated as low risk. The final score is capped at 100, and the rationale prints each component.
+3. **Migration-wave schema.** The official `SCHEMA.md` requires exactly `1`, `2`, `3`, or `review`; display strings such as `Wave 1` are invalid. Unknown records are routed to `review`; a score of 75+ or an exposed quantum-vulnerable record is wave `1`; remaining quantum-vulnerable/legacy-broken records are wave `2`; other known categories are wave `3`.
 4. **Tests depended on DataFrame-specific output.** CLI tests now use standard-library CSV records and validate the exact output schema and order.
 5. **Processor D qubit count.** The repository's supplementary D model was previously 11 qubits. The event FAQ describes a custom 12-qubit D design, so the repository's participant-defined D model was updated to 12 qubits, 14 undirected edges, no triangles, and diameter 5. Its topology/noise/ports remain synthetic assumptions; it is not an official hardware config.
 
@@ -24,7 +19,7 @@
 - Classical public-key families: RSA, DSA, DH/FFDHE, ECC/ECDH/ECDSA, Ed25519 and X25519.
 - PQC families and hybrid classical+PQC names.
 - Role/algorithm contradictions and explicit parameter mismatches.
-- Exact scoring components, score cap, stable rank, dependency filtering, and wave strings.
+- Exact output schema, conservative alias/parameter handling, scoring components including sensitivity, score cap, stable rank, dependency evidence, and exact migration-wave values.
 - CSV header aliases, duplicate/blank IDs, CLI execution, 1,000-row determinism, and Processor D graph/generator consistency.
 
 ## Official requirements still blocked

@@ -60,5 +60,6 @@ def test_smoke_evaluation_entrypoint_and_vetted_dependency_pins_are_present():
     assert (root / "scripts" / "run_phase2_smoke_evaluation.py").is_file()
     requirements = (root / "requirements.txt").read_text(encoding="utf-8")
     assert "cryptography==50.0.2" in requirements
-    assert "pqcrypto==0.4.0" in requirements
+    assert "pqcrypto==1.0.0" in requirements
+    assert "psutil>=5.9" in requirements
 

@@ -148,9 +148,9 @@ def classify_algorithm(value: Any, params: Any = "") -> str:
 
     has_pqc = False
     if "MLKEM" in s or "KYBER" in s:
-        has_pqc = bool(re.search(r"(?:MLKEM|KYBER)(512|768|1024)", s) or p in {"512", "768", "1024"})
+        has_pqc = bool(re.search(r"(?:MLKEM|KYBER)(512|768|1024)", s) or p in {"512", "768", "1024"} or s in {"MLKEM", "KYBER"})
     elif "MLDSA" in s or "DILITHIUM" in s:
-        has_pqc = bool(re.search(r"(?:MLDSA|DILITHIUM)(44|65|87|2|3|5)", s) or p in {"44", "65", "87", "2", "3", "5"})
+        has_pqc = bool(re.search(r"(?:MLDSA|DILITHIUM)(44|65|87|2|3|5)", s) or p in {"44", "65", "87", "2", "3", "5"} or s in {"MLDSA", "DILITHIUM"})
     elif "FNDSA" in s or "FALCON" in s:
         has_pqc = bool(re.search(r"(?:FNDSA|FALCON)(512|1024)", s) or p in {"512", "1024"})
     elif "HQC" in s:
@@ -162,11 +162,16 @@ def classify_algorithm(value: Any, params: Any = "") -> str:
 
     # DSA in ML-DSA/FN-DSA/SLH-DSA is not classical DSA.
     classical_markers = (
-        "RSA", "ECDH", "ECDSA", "ECDHE", "ED25519", "ED448", "EDDSA",
+        "RSA", "RS256", "RS384", "RS512", "RSASHA256", "RSASHA384", "RSASHA512",
+        "ECDH", "ECDSA", "ECDHE", "ECDSAP256SHA256",
+        "ECDSAWITHSHA384", "ED25519", "ED448", "EDDSA", "CURVE25519",
         "X25519", "X448", "FFDHE", "MODP", "SECP", "P256", "P384", "P521",
         "DIFFIEHELLMAN", "ELGAMAL",
     )
-    has_classical = any(marker in s for marker in classical_markers)
+    has_classical = (
+        any(marker in s for marker in classical_markers)
+        or s in {"ES256", "ES384", "ES512"}
+    )
     if not has_classical and "DSA" in s and not any(x in s for x in ("MLDSA", "FNDSA", "SLHDSA")):
         has_classical = True
     if re.match(r"^DH(?:\d|$)", s):
@@ -255,13 +260,17 @@ def classify_record(row: dict[str, Any]) -> str:
     has_symmetric = any(marker in norm_alg for marker in ("AES", "CHACHA20", "SM4", "DES", "TDEA", "DESEDE", "RC2", "RC4"))
     has_mac = any(marker in norm_alg for marker in ("HMAC", "CMAC", "GMAC", "POLY1305", "KMAC"))
     has_kdf = norm_alg.startswith(("HKDF", "PBKDF2", "SCRYPT", "ARGON2", "CONCATKDF", "SP800108"))
-    has_signature = any(marker in norm_alg for marker in (
-        "ECDSA", "ED25519", "ED448", "EDDSA", "MLDSA", "DILITHIUM",
-        "FNDSA", "FALCON", "SLHDSA", "SPHINCS", "LMS", "XMSS", "RSA", "DSA",
-    )) and not any(marker in norm_alg for marker in ("OAEP", "RSAENCRYPT", "RSAES"))
+    has_signature = (
+        any(marker in norm_alg for marker in (
+            "ECDSA", "CURVE25519", "ED25519", "ED448", "EDDSA",
+            "MLDSA", "DILITHIUM", "FNDSA", "FALCON", "SLHDSA", "SPHINCS",
+            "LMS", "XMSS", "RSA", "RS256", "RS384", "RS512", "DSA",
+        ))
+        or norm_alg in {"ES256", "ES384", "ES512"}
+    ) and not any(marker in norm_alg for marker in ("OAEP", "RSAENCRYPT", "RSAES"))
     has_key_establishment = any(marker in norm_alg for marker in (
-        "RSA", "ECDH", "ECDHE", "X25519", "X448", "DIFFIEHELLMAN", "FFDHE", "MODP",
-        "MLKEM", "KYBER", "HQC",
+        "RSA", "ECDH", "ECDHE", "X25519", "X448", "CURVE25519", "DIFFIEHELLMAN",
+        "FFDHE", "MODP", "MLKEM", "KYBER", "HQC",
     )) or re.match(r"^DH(?:\d|$)", norm_alg) is not None
 
     if primitive in PUBLIC_KEY_ROLES and label in {"SYMMETRIC_OR_HASH", "LEGACY_BROKEN"}:
@@ -316,8 +325,8 @@ def _retention_years(row: dict[str, Any]) -> float | None:
     return max(0.0, years)
 
 
-def _score(row: dict[str, Any], label: str) -> int:
-    """Apply the task's additive score exactly, then cap it at 100."""
+def _score_components(row: dict[str, Any], label: str) -> dict[str, int]:
+    """Return transparent, conservative scoring components for the report rationale."""
     base = {
         "QUANTUM_VULNERABLE": 40,
         "LEGACY_BROKEN": 35,
@@ -326,13 +335,47 @@ def _score(row: dict[str, Any], label: str) -> int:
         "QUANTUM_RESISTANT": 5,
         "SYMMETRIC_OR_HASH": 5,
     }[label]
-    exposure_bonus = 25 if _yes(_first(row, ("internet_exposed",))) is True else 10
-    years = _retention_years(row)
-    retention_bonus = 20 if years is not None and years >= 10 else 10 if years is not None and years >= 5 else 5
-    criticality = _first(row, ("criticality",)).lower()
-    criticality_bonus = 15 if criticality == "critical" else 8 if criticality in {"high", "medium"} else 3
-    return min(100, max(0, base + exposure_bonus + retention_bonus + criticality_bonus))
 
+    exposure = _yes(_first(row, ("internet_exposed",)))
+    exposure_bonus = 25 if exposure is True else 10 if exposure is False else 20
+
+    years = _retention_years(row)
+    retention_bonus = (
+        20 if years is not None and years >= 10
+        else 10 if years is not None and years >= 5
+        else 5 if years is not None
+        else 12
+    )
+
+    criticality = _first(row, ("criticality",)).strip().lower()
+    criticality_bonus = (
+        15 if criticality == "critical"
+        else 12 if criticality == "high"
+        else 8 if criticality == "medium"
+        else 3 if criticality == "low"
+        else 10
+    )
+
+    sensitivity = _first(row, ("data_sensitivity",)).strip().lower()
+    sensitivity_bonus = (
+        15 if sensitivity == "restricted"
+        else 12 if sensitivity == "confidential"
+        else 8 if sensitivity == "internal"
+        else 3 if sensitivity == "public"
+        else 10
+    )
+    return {
+        "base": base,
+        "exposure": exposure_bonus,
+        "sensitivity": sensitivity_bonus,
+        "retention": retention_bonus,
+        "criticality": criticality_bonus,
+    }
+
+
+def _score(row: dict[str, Any], label: str) -> int:
+    """Score algorithm risk plus exposure, sensitivity, retention and criticality."""
+    return min(100, max(0, sum(_score_components(row, label).values())))
 
 def _recommend(label: str, algorithm: str, row: dict[str, Any]) -> str:
     name = _text(algorithm) or "the unspecified algorithm"
@@ -356,39 +399,46 @@ def _recommend(label: str, algorithm: str, row: dict[str, Any]) -> str:
     return "Manually review the asset and document the approved next step."
 
 
-def _rationale(row: dict[str, Any], label: str, score: int) -> str:
-    exposure = _yes(_first(row, ("internet_exposed",)))
-    exposure_bonus = 25 if exposure is True else 10
-    years = _retention_years(row)
-    retention_bonus = 20 if years is not None and years >= 10 else 10 if years is not None and years >= 5 else 5
-    criticality = _first(row, ("criticality",)).lower()
-    criticality_bonus = 15 if criticality == "critical" else 8 if criticality in {"high", "medium"} else 3
+def _rationale(
+    row: dict[str, Any],
+    label: str,
+    score: int,
+    dependencies: str = "",
+) -> str:
+    exposure_raw = _first(row, ("internet_exposed",)) or "unknown"
+    exposure_value = _yes(exposure_raw)
+    sensitivity = _first(row, ("data_sensitivity",)).lower() or "unknown"
+    retention = _first(row, ("data_retention_years", "retention_years", "retention", "data_retention")) or "unknown"
+    criticality = _first(row, ("criticality",)) or "unspecified"
+    components = _score_components(row, label)
+    raw_total = sum(components.values())
+
     missing = []
     if not _first(row, ("algorithm",)):
         missing.append("algorithm")
-    if exposure is None:
+    if exposure_value is None:
         missing.append("internet_exposed")
-    if years is None:
+    if _retention_years(row) is None:
         missing.append("data_retention_years")
     if not _first(row, ("criticality",)):
         missing.append("criticality")
-    base = {
-        "QUANTUM_VULNERABLE": 40, "LEGACY_BROKEN": 35, "UNKNOWN": 20,
-        "HYBRID": 15, "QUANTUM_RESISTANT": 5, "SYMMETRIC_OR_HASH": 5,
-    }[label]
-    raw_total = base + exposure_bonus + retention_bonus + criticality_bonus
+    if not _first(row, ("data_sensitivity",)):
+        missing.append("data_sensitivity")
+
+    score_formula = "+".join(f"{name}:{value}" for name, value in components.items())
     parts = [
         f"label={label}",
         f"score={score}/100",
-        f"score_components=base:{base}+exposure:{exposure_bonus}+retention:{retention_bonus}+criticality:{criticality_bonus}={raw_total}; capped_final={score}",
-        f"exposure={_first(row, ('internet_exposed',)) or 'unknown'}",
-        f"retention={_first(row, ('data_retention_years', 'retention_years', 'retention', 'data_retention')) or 'unknown'}",
-        f"criticality={_first(row, ('criticality',)) or 'unspecified'}",
+        f"score_components={score_formula}={raw_total}; capped_final={score}",
+        f"exposure={exposure_raw}",
+        f"data_sensitivity={sensitivity}",
+        f"retention={retention}",
+        f"criticality={criticality}",
+        f"dependencies={dependencies or 'not specified; confirm CA/HSM/protocol prerequisites before scheduling'}",
     ]
     if missing:
         parts.append("missing metadata: " + ", ".join(missing))
     return "; ".join(parts)
-
 
 def _stable_asset_ids(rows: list[dict[str, Any]]) -> list[str]:
     ids = []
@@ -449,6 +499,22 @@ def _dependency_ids(value: Any, known_ids: set[str], aliases: dict[str, str]) ->
     return ";".join(valid)
 
 
+def _dependencies_from_evidence(
+    row: dict[str, Any],
+    known_ids: set[str],
+    aliases: dict[str, str],
+) -> str:
+    """Use explicitly declared dependencies or IDs explicitly referenced in evidence fields."""
+    declared = _dependency_ids(_first(row, ("depends_on",)), known_ids, aliases)
+    found = declared.split(";") if declared else []
+    evidence = " ".join(_first(row, (field,)) for field in ("notes", "usage", "protocol"))
+    for candidate in re.findall(r"\b[A-Za-z][A-Za-z0-9]*-\d{3,}\b", evidence):
+        resolved = aliases.get(candidate, "") or (candidate if candidate in known_ids else "")
+        if resolved in known_ids and resolved not in found:
+            found.append(resolved)
+    return ";".join(found)
+
+
 def build_predictions(input_csv: str | Path) -> list[dict[str, Any]]:
     rows, _headers = _read_csv(input_csv)
     if not rows:
@@ -467,11 +533,12 @@ def build_predictions(input_csv: str | Path) -> list[dict[str, Any]]:
         if label == "UNKNOWN":
             wave = "review"
         elif score >= 75 or (label == "QUANTUM_VULNERABLE" and exposed is True):
-            wave = "Wave 1"
+            wave = "1"
         elif label in {"QUANTUM_VULNERABLE", "LEGACY_BROKEN"}:
-            wave = "Wave 2"
+            wave = "2"
         else:
-            wave = "Wave 3"
+            wave = "3"
+        dependencies = _dependencies_from_evidence(row, known_ids, dependency_aliases)
         results.append({
             "asset_id": asset_ids[index],
             "predicted_label": label,
@@ -479,8 +546,8 @@ def build_predictions(input_csv: str | Path) -> list[dict[str, Any]]:
             "priority_rank": 0,
             "recommended_action": _recommend(label, algorithm, row),
             "migration_wave": wave,
-            "depends_on": _dependency_ids(_first(row, ("depends_on",)), known_ids, dependency_aliases),
-            "rationale": _rationale(row, label, score),
+            "depends_on": dependencies,
+            "rationale": _rationale(row, label, score, dependencies),
         })
     order = sorted(range(len(results)), key=lambda i: (-results[i]["priority_score"], i))
     for rank, index in enumerate(order, start=1):
@@ -499,8 +566,8 @@ def validate_predictions(predictions: list[dict[str, Any]], input_csv: str | Pat
             raise ValueError("asset_id cannot be blank")
         if row["predicted_label"] not in LABELS:
             raise ValueError("Invalid predicted_label")
-        if row["migration_wave"] not in {"Wave 1", "Wave 2", "Wave 3", "review"}:
-            raise ValueError("migration_wave must be Wave 1, Wave 2, Wave 3, or review")
+        if str(row["migration_wave"]) not in {"1", "2", "3", "review"}:
+            raise ValueError("migration_wave must be 1, 2, 3, or review")
         try:
             score = float(row["priority_score"])
         except (TypeError, ValueError):

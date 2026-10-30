@@ -27,7 +27,9 @@ def write_csv(path, rows, headers=None):
         ("ML-DSA-44", "QUANTUM_RESISTANT"), ("FN-DSA-512", "QUANTUM_RESISTANT"),
         ("LMS", "QUANTUM_RESISTANT"), ("XMSS", "QUANTUM_RESISTANT"),
         ("ECDSA-P256+ML-DSA-44", "HYBRID"), ("X25519+ML-KEM-768", "HYBRID"),
-        ("vendor-managed", "UNKNOWN"), ("", "UNKNOWN"),
+        ("RS256", "QUANTUM_VULNERABLE"), ("ES256", "QUANTUM_VULNERABLE"),
+        ("Curve25519", "QUANTUM_VULNERABLE"), ("ML-KEM", "QUANTUM_RESISTANT"),
+        ("ML-DSA", "QUANTUM_RESISTANT"), ("vendor-managed", "UNKNOWN"), ("", "UNKNOWN"),
     ],
 )
 def test_algorithm_families(algorithm, expected):
@@ -40,6 +42,17 @@ def test_hash_declared_as_signature_is_unknown():
 
 def test_classical_algorithm_declared_as_hash_is_unknown():
     assert classify_record({"algorithm": "RSA-2048", "primitive": "hash"}) == "UNKNOWN"
+
+
+def test_bare_standardized_pqc_names_are_classified_when_not_contradicted():
+    assert classify_record({"algorithm": "ML-KEM", "primitive": "key_establishment"}) == "QUANTUM_RESISTANT"
+    assert classify_record({"algorithm": "ML-DSA", "primitive": "digital_signature"}) == "QUANTUM_RESISTANT"
+
+
+def test_classical_jose_and_curve_aliases_are_role_aware():
+    assert classify_record({"algorithm": "RS256", "primitive": "digital_signature"}) == "QUANTUM_VULNERABLE"
+    assert classify_record({"algorithm": "ES256", "primitive": "digital_signature"}) == "QUANTUM_VULNERABLE"
+    assert classify_record({"algorithm": "Curve25519", "primitive": "key_establishment"}) == "QUANTUM_VULNERABLE"
 
 
 def test_invalid_explicit_pqc_parameter_is_unknown():
@@ -69,7 +82,7 @@ def test_schema_columns_and_exact_wave_values(tmp_path):
     assert list(predictions[0]) == OUTPUT_COLUMNS
     assert len(predictions) == 3
     assert all(row["predicted_label"] in LABELS for row in predictions)
-    assert {row["migration_wave"] for row in predictions} == {"Wave 1", "Wave 3", "review"}
+    assert {row["migration_wave"] for row in predictions} == {"1", "3", "review"}
     assert sorted(row["priority_rank"] for row in predictions) == [1, 2, 3]
     assert predictions[2]["migration_wave"] == "review"
 
