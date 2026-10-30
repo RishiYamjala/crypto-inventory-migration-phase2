@@ -208,85 +208,79 @@ def _parameter_issue(algorithm: Any, params: Any) -> bool:
         return match.group(1) if match else ""
 
     # ML-KEM / Kyber standardized and historical names.
+    # In every family below the parameter field may carry the bare value ("768") or the family
+    # prefix as well ("MLKEM768"); anything else is invalid metadata.
     if "MLKEM" in a or "KYBER" in a:
-        allowed = {"512", "768", "1024"}
-        supplied = p if p in allowed else embedded(r"(?:MLKEM|KYBER)(512|768|1024)")
-        if supplied not in allowed:
+        supplied = re.fullmatch(r"(?:MLKEM|KYBER)?(512|768|1024)", p)
+        if not supplied:
             return True
         named = embedded(r"(?:MLKEM|KYBER)(512|768|1024)")
-        if named and p in allowed and named != p:
+        if named and named != supplied.group(1):
             return True
 
-    # ML-DSA / Dilithium: Dilithium2/3/5 correspond to ML-DSA-44/65/87.
+    # ML-DSA / Dilithium: Dilithium2/3/5 are the legacy names of ML-DSA-44/65/87, so values are
+    # compared after mapping both sides to the standardized ML-DSA parameter set.
     if "MLDSA" in a or "DILITHIUM" in a:
-        allowed = {"44", "65", "87", "2", "3", "5"}
-        if p not in allowed:
+        to_modern = {"2": "44", "3": "65", "5": "87", "44": "44", "65": "65", "87": "87"}
+        supplied = re.fullmatch(r"(?:MLDSA|DILITHIUM)?(44|65|87|2|3|5)", p)
+        if not supplied:
             return True
-        named_modern = embedded(r"MLDSA(44|65|87)")
-        named_legacy = embedded(r"DILITHIUM([235])")
-        legacy_to_modern = {"2": "44", "3": "65", "5": "87"}
-        if named_modern and p in {"44", "65", "87"} and named_modern != p:
-            return True
-        if named_modern and p in {"2", "3", "5"} and legacy_to_modern[p] != named_modern:
-            return True
-        if named_legacy and p in {"2", "3", "5"} and named_legacy != p:
-            return True
-        if named_legacy and p in {"44", "65", "87"} and legacy_to_modern[named_legacy] != p:
+        named = embedded(r"MLDSA(44|65|87)") or to_modern.get(embedded(r"DILITHIUM([235])"), "")
+        if named and named != to_modern[supplied.group(1)]:
             return True
 
     # FN-DSA / Falcon.
     if "FNDSA" in a or "FALCON" in a:
-        allowed = {"512", "1024"}
-        if p not in allowed:
+        supplied = re.fullmatch(r"(?:FNDSA|FALCON)?(512|1024)", p)
+        if not supplied:
             return True
         named = embedded(r"(?:FNDSA|FALCON)(512|1024)")
-        if named and named != p:
+        if named and named != supplied.group(1):
             return True
 
     # HQC.
     if "HQC" in a:
-        allowed = {"128", "192", "256"}
-        if p not in allowed:
+        supplied = re.fullmatch(r"(?:HQC)?(128|192|256)", p)
+        if not supplied:
             return True
         named = embedded(r"HQC(128|192|256)")
-        if named and named != p:
+        if named and named != supplied.group(1):
             return True
 
-    # SLH-DSA / SPHINCS+ parameter names, e.g. SHA2-128s or SHAKE-256f.
+    # SLH-DSA / SPHINCS+ parameter sets, e.g. SHA2-128s or SHAKE-256f. When the algorithm name
+    # already embeds a parameter set (SPHINCS+-SHA2-128s) the supplied one must agree with it.
     if "SLHDSA" in a or "SPHINCS" in a:
-        valid = re.fullmatch(r"(?:SHA2|SHAKE)(?:128|192|256)(?:S|F)?", p)
-        if not valid:
+        param_set = r"(SHA2|SHAKE)(128|192|256)([SF])?"
+        supplied = re.fullmatch(param_set, p)
+        if not supplied:
             return True
-        named = embedded(r"(?:SHA2|SHAKE)(128|192|256)([SF])?")
+        named = re.search(param_set, a)
         if named:
-            supplied = re.search(r"(?:SHA2|SHAKE)(128|192|256)([SF])?", p)
-            if not supplied or named.group(1) != supplied.group(1):
+            if named.group(1) != supplied.group(1) or named.group(2) != supplied.group(2):
                 return True
-            named_family = "SHAKE" if "SHAKE" in a else "SHA2"
-            supplied_family = "SHAKE" if p.startswith("SHAKE") else "SHA2"
-            if named_family in a and named_family != supplied_family:
-                return True
-            if named.group(2) and named.group(2) != (supplied.group(2) or ""):
+            # A name without an s/f variant is less specific, so only a stated variant must match.
+            if named.group(3) and named.group(3) != supplied.group(3):
                 return True
 
-    # LMS/HSS and XMSS parameter encodings. The normalized forms omit separators.
-    if any(token in a for token in ("LMS", "HSS")):
-        if not re.fullmatch(r"(?:HSS)?(?:LMS)?(?:SHA256|SHAKE256)M(?:24|32)H(?:5|10|15|20|25)", p):
+    # Stateful hash-based signatures (LMS/HSS, LM-OTS, XMSS). Normalized forms drop separators and
+    # the family prefix is optional on both sides, so only the parameter values are compared.
+    def stateful_issue(pattern: str) -> bool:
+        supplied = re.fullmatch(pattern, p)
+        if not supplied:
             return True
-        named = re.search(r"(?:HSS)?(?:LMS)?(?:SHA256|SHAKE256)M(?:24|32)H(?:5|10|15|20|25)", a)
-        if named and named.group(0) != p:
-            return True
+        named = re.search(pattern, a)
+        return bool(named) and named.groups() != supplied.groups()
 
-    if "XMSS" in a:
-        if not re.fullmatch(r"(?:XMSS)?(?:SHA2|SHAKE)(?:10|16|20)(?:256|512)", p):
-            return True
-        named = re.search(r"(?:XMSS)?(?:SHA2|SHAKE)(?:10|16|20)(?:256|512)", a)
-        if named and named.group(0) != p:
-            return True
-
+    stateful_patterns = []
+    if "LMS" in a or "HSS" in a:
+        stateful_patterns.append(r"(?:HSS)?(?:LMS)?(SHA256|SHAKE256)M(24|32)H(5|10|15|20|25)")
     if "LMOTS" in a:
-        if not re.fullmatch(r"(?:LMOTS)?(?:SHA256|SHAKE256)N(?:24|32)W(?:1|2|4|8)", p):
-            return True
+        stateful_patterns.append(r"(?:LMOTS)?(SHA256|SHAKE256)N(24|32)W(1|2|4|8)")
+    if "XMSS" in a:
+        stateful_patterns.append(r"(?:XMSS)?(SHA2|SHAKE)(10|16|20)(256|512)")
+    # A name that spans several families (e.g. HSS with LM-OTS) is valid if the parameter fits any.
+    if stateful_patterns and all(stateful_issue(pattern) for pattern in stateful_patterns):
+        return True
 
     # Explicit AES key-size conflicts are invalid metadata.
     if "AES" in a and p.isdigit():

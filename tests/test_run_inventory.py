@@ -322,3 +322,88 @@ def test_hybrid_requires_both_recognized_component_families(algorithm):
 )
 def test_dilithium_and_sphincs_parameter_alias_consistency(algorithm, params, expected):
     assert _parameter_issue(algorithm, params) is expected
+
+
+# Second-pass regression coverage: parameter checks must never raise and must not reject valid metadata.
+@pytest.mark.parametrize("algorithm", ["SHA-1", "SHA1", "sha-1", "SHA-1 (legacy)"])
+def test_sha1_spelling_variants_validate_as_hash_records(algorithm):
+    assert classify_record({"algorithm": algorithm, "primitive": "hash"}) == "LEGACY_BROKEN"
+
+
+def test_sha1_is_rejected_for_public_key_roles():
+    assert classify_record({"algorithm": "SHA-1", "primitive": "digital_signature"}) == "UNKNOWN"
+
+
+@pytest.mark.parametrize(
+    ("algorithm", "params", "expected"),
+    [
+        # Prefix on the algorithm, the parameter, both or neither must not change the verdict.
+        ("HSS_LMS_SHA256_M32_H10", "LMS_SHA256_M32_H10", False),
+        ("HSS_LMS_SHA256_M32_H10", "SHA256_M32_H10", False),
+        ("LMS_SHA256_M32_H10", "SHA256_M32_H10", False),
+        ("LMS_SHA256_M32_H10", "SHA256_M32_H5", True),
+        ("HSS-LMS", "LMS_SHAKE256_M24_H15", False),
+        ("XMSS-SHA2_10_256", "SHA2_10_256", False),
+        ("XMSS-SHA2_10_256", "XMSS-SHA2_10_256", False),
+        ("XMSS-SHA2_10_256", "SHA2_16_256", True),
+        ("XMSS", "bogus", True),
+        ("LM-OTS", "LMOTS_SHA256_N32_W8", False),
+        ("HSS-LM-OTS", "LMOTS_SHA256_N32_W8", False),
+        ("LMOTS_SHA256_N32_W8", "SHA256_N32_W8", False),
+        ("LMOTS", "LMOTS_SHA256_N32_W3", True),
+    ],
+)
+def test_stateful_hash_signature_parameters_compare_values_not_prefixes(algorithm, params, expected):
+    assert _parameter_issue(algorithm, params) is expected
+
+
+@pytest.mark.parametrize(
+    ("algorithm", "params", "expected"),
+    [
+        ("SPHINCS+-SHA2-128s", "SHA2-128s", False),
+        ("SPHINCS+-SHA2-128s", "SHA2-128f", True),
+        ("SPHINCS+-SHA2-128s", "SHA2-192s", True),
+        ("SPHINCS+-SHA2-128s", "SHAKE-128s", True),
+        ("SLH-DSA-SHAKE-256f", "SHAKE-256f", False),
+        ("SLH-DSA-SHAKE-256f", "SHA2-256f", True),
+        ("SPHINCS+", "SHAKE-192s", False),
+        ("SPHINCS+", "bogus", True),
+        ("Dilithium2", "44", False),
+        ("Dilithium5", "87", False),
+        ("Dilithium5", "65", True),
+        ("ML-DSA-87", "5", False),
+        ("ML-DSA-87", "3", True),
+        ("Dilithium3", "ML-DSA-65", False),
+        ("ML-KEM-768", "untrusted-768", True),
+        ("Kyber768", "ML-KEM-768", False),
+        ("Kyber768", "512", True),
+        ("Falcon-512", "1024", True),
+        ("Falcon-512", "FNDSA512", False),
+        ("HQC-128", "HQC-256", True),
+    ],
+)
+def test_legacy_pqc_alias_parameter_consistency_never_raises(algorithm, params, expected):
+    assert _parameter_issue(algorithm, params) is expected
+
+
+@pytest.mark.parametrize(
+    ("algorithm", "primitive", "params", "expected"),
+    [
+        ("SPHINCS+-SHA2-128s", "digital_signature", "SHA2-128s", "QUANTUM_RESISTANT"),
+        ("SPHINCS+-SHA2-128s", "digital_signature", "SHAKE-128s", "UNKNOWN"),
+        ("Dilithium3", "digital_signature", "44", "UNKNOWN"),
+        ("Dilithium3", "digital_signature", "3", "QUANTUM_RESISTANT"),
+        ("HSS-LMS", "digital_signature", "LMS_SHA256_M32_H10", "QUANTUM_RESISTANT"),
+        ("XMSS-SHA2_10_256", "digital_signature", "SHA2_10_256", "QUANTUM_RESISTANT"),
+    ],
+)
+def test_classify_record_handles_pqc_aliases_end_to_end(algorithm, primitive, params, expected):
+    row = {"algorithm": algorithm, "primitive": primitive, "key_size_or_parameter_set": params}
+    assert classify_record(row) == expected
+
+
+def test_hybrid_label_needs_a_classical_and_a_pqc_component():
+    for name in ("HYBRID", "Hybrid-KEM", "HYBRID-ML-KEM-768", "HYBRID-RSA", "hybrid signature"):
+        assert classify_algorithm(name) == "UNKNOWN", name
+    for name in ("HYBRID-X25519-MLKEM768", "RSA+ML-DSA-65", "ECDSA-P256+Dilithium3"):
+        assert classify_algorithm(name) == "HYBRID", name
